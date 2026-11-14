@@ -1,136 +1,70 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, Asterisk, Check } from "lucide-react";
-
-type Role = "admin" | "board" | "fundraising";
-
-const roles: {
-  id: Role;
-  name: string;
-  description: string;
-}[] = [
-  {
-    id: "admin",
-    name: "CEO / Admin",
-    description: "Organization overview and management",
-  },
-  {
-    id: "board",
-    name: "Board Member",
-    description: "Assigned donors and follow-ups",
-  },
-  {
-    id: "fundraising",
-    name: "Fundraising",
-    description: "Campaigns, outreach, and events",
-  },
-];
+import { Asterisk, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] =
-    useState<Role>("board");
+
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleContinue(e: React.FormEvent<HTMLFormElement>) {
+  function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
 
-    // Temporary demo navigation.
-    // Replace with Supabase Auth later.
-    navigate(`/${selectedRole}/overview`);
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    // Authentication will be connected to Supabase later.
+    // Do not navigate until the user's role is verified.
+    setError("Sign-in is not connected yet.");
   }
 
   return (
-    <main className="min-h-screen bg-[#F5F0E6] lg:grid lg:grid-cols-[48%_52%]">
+    <main className="min-h-screen bg-[#F5F0E6] text-[#242A26]">
 
-      {/* LEFT: BRAND PANEL */}
-      <section className="relative flex min-h-[270px] flex-col justify-between overflow-hidden bg-[#183E32] p-7 text-[#F5F0E6] sm:p-10 lg:min-h-screen lg:p-14">
+      {/* TOP LEFT BRAND */}
+      <header className="absolute left-6 top-6 sm:left-12 sm:top-10">
+        <div className="flex items-center gap-3">
 
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border border-[#8BA99A]">
+          <div className="flex h-10 w-10 items-center justify-center bg-[#183E32] text-[#F5F0E6]">
             <Asterisk size={26} strokeWidth={1.5} />
           </div>
 
-          <span className="text-lg font-semibold tracking-[-0.05em]">
+          <span className="text-xl font-semibold tracking-[-0.06em] text-[#183E32]">
             coding in color.
           </span>
         </div>
+      </header>
 
-        <div className="relative z-10 max-w-lg py-10 lg:py-0">
-          <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#B8CEBF]">
-            Relationships that matter
-          </p>
+      {/* LOGIN CONTENT */}
+      <section className="flex min-h-screen items-center justify-center px-6 py-28">
 
-          <h1 className="font-display text-[clamp(3.6rem,6vw,7rem)] leading-[0.98] tracking-[-0.025em]">
-            The people
-            <br />
-            behind the
-            <br />
-            <span className="italic text-[#D8B77D]">
-              progress.
-            </span>
-          </h1>
+        <div className="w-full max-w-[400px]">
 
-          <p className="mt-7 max-w-sm text-sm leading-7 text-[#C6D7CC]">
-            A shared home for the relationships that
-            keep our programs going.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex items-end justify-between border-t border-[#507365] pt-6">
-          <div>
-            <p className="text-xs font-semibold tracking-wide">
-              CODING IN COLOR
+          <div className="mb-10">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7B8D80]">
+              Member access
             </p>
 
-            <p className="mt-1 text-xs text-[#ABC4B4]">
-              Donor & Funder Platform
+            <h1 className="font-display text-6xl leading-none tracking-[-0.025em] sm:text-7xl">
+              Welcome back.
+            </h1>
+
+            <p className="mt-4 text-sm text-[#788279]">
+              Sign in to your workspace.
             </p>
           </div>
 
-          <span className="text-xs text-[#ABC4B4]">
-            PHOENIX, AZ
-          </span>
-        </div>
-
-        {/* Subtle decorative outline */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-36 top-1/4 h-[450px] w-[450px] rounded-full border border-[#31584A] opacity-70"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-20 top-1/3 h-[300px] w-[300px] rounded-full border border-[#31584A] opacity-50"
-        />
-      </section>
-
-      {/* RIGHT: LOGIN PANEL */}
-      <section className="flex min-h-[600px] items-center justify-center px-7 py-14 sm:px-12 lg:min-h-screen lg:px-20">
-        <div className="w-full max-w-[430px]">
-
-          <div className="mb-12 flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#829087]">
-              Member Access
-            </span>
-
-            <span className="text-xs text-[#829087]">
-              01 / 01
-            </span>
-          </div>
-
-          <h2 className="font-display text-6xl leading-none tracking-[-0.025em] text-[#242A26] sm:text-7xl">
-            Welcome back.
-          </h2>
-
-          <p className="mb-10 mt-4 text-sm leading-6 text-[#707970]">
-            Sign in to your Coding in Color workspace.
-          </p>
-
-          <form onSubmit={handleContinue}>
+          <form onSubmit={handleLogin} className="space-y-7">
 
             {/* EMAIL */}
-            <div className="mb-8">
+            <div>
               <label
                 htmlFor="email"
                 className="mb-3 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#3E4A42]"
@@ -141,79 +75,74 @@ export default function Login() {
               <input
                 id="email"
                 type="email"
+                autoComplete="email"
+                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@codingincolor.net"
-                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm text-[#242A26] outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32]"
+                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32]"
               />
             </div>
 
-            {/* DEMO ROLE PICKER */}
-            <fieldset>
-              <legend className="mb-3 text-[11px] font-bold uppercase tracking-[0.12em] text-[#3E4A42]">
-                Choose your workspace
-              </legend>
+            {/* PASSWORD */}
+            <div>
+              <label
+                htmlFor="password"
+                className="mb-3 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#3E4A42]"
+              >
+                Password
+              </label>
 
-              <div className="border-t border-[#C8D0C5]">
-                {roles.map((role) => {
-                  const active = selectedRole === role.id;
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32]"
+                />
 
-                  return (
-                    <label
-                      key={role.id}
-                      className={`flex cursor-pointer items-center justify-between border-b px-4 py-4 transition-colors ${
-                        active
-                          ? "border-[#183E32] bg-[#E3E9DF]"
-                          : "border-[#C8D0C5] hover:bg-[#ECEFE7]"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value={role.id}
-                        checked={active}
-                        onChange={() => setSelectedRole(role.id)}
-                        className="sr-only"
-                      />
-
-                      <span>
-                        <span className="block text-sm font-semibold text-[#242A26]">
-                          {role.name}
-                        </span>
-
-                        <span className="mt-1 block text-xs text-[#778277]">
-                          {role.description}
-                        </span>
-                      </span>
-
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center border ${
-                          active
-                            ? "border-[#183E32] bg-[#183E32] text-white"
-                            : "border-[#AAB7AB]"
-                        }`}
-                      >
-                        {active && <Check size={13} />}
-                      </span>
-                    </label>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                  className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer text-[#7B8D80] hover:text-[#183E32]"
+                >
+                  {showPassword ? (
+                    <EyeOff size={19} />
+                  ) : (
+                    <Eye size={19} />
+                  )}
+                </button>
               </div>
-            </fieldset>
+            </div>
 
-            {/* SUBMIT */}
+            {/* ERROR MESSAGE */}
+            {error && (
+              <p role="alert" className="text-sm text-red-700">
+                {error}
+              </p>
+            )}
+
+            {/* SIGN IN */}
             <button
               type="submit"
-              className="mt-9 flex w-full cursor-pointer items-center justify-between bg-[#183E32] px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-[#285745] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#183E32]"
+              className="flex w-full cursor-pointer items-center justify-between bg-[#183E32] px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-[#285745] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#183E32]"
             >
-              Continue to workspace
-              <ArrowUpRight size={19} />
+              Sign in
+              <ArrowRight size={19} />
             </button>
-
-            <p className="mt-5 text-center text-xs leading-5 text-[#899388]">
-              Demo mode — authentication will be added later.
-            </p>
           </form>
+
+          <p className="mt-10 text-center text-xs text-[#899388]">
+            Coding in Color · Donor & Funder Platform
+          </p>
+
         </div>
       </section>
     </main>
