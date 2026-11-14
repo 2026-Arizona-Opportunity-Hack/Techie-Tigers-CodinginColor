@@ -308,6 +308,22 @@ CREATE TRIGGER donors_close_work
   AFTER UPDATE OF active ON donors
   FOR EACH ROW EXECUTE FUNCTION close_work_on_deactivate();
 
+-- Reassigning a donor moves their open to-dos to the new owner,
+-- so nothing is stranded with someone who can no longer see the donor
+CREATE OR REPLACE FUNCTION move_open_steps_with_owner() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.owner_id IS DISTINCT FROM OLD.owner_id THEN
+    UPDATE next_steps SET assigned_to = NEW.owner_id
+     WHERE donor_id = NEW.id AND NOT done;
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER donors_move_steps
+  AFTER UPDATE OF owner_id ON donors
+  FOR EACH ROW EXECUTE FUNCTION move_open_steps_with_owner();
+
 -- Backstop: no new drafts or sends to inactive donors,
 -- even if a bug or a batch job forgets to filter
 CREATE OR REPLACE FUNCTION block_inactive_outreach() RETURNS trigger
@@ -364,6 +380,10 @@ BEGIN
   UPDATE communications SET donor_id = keep_id WHERE donor_id = dup_id;
   UPDATE next_steps     SET donor_id = keep_id WHERE donor_id = dup_id;
   UPDATE donor_sources  SET donor_id = keep_id WHERE donor_id = dup_id;
+
+  -- Open to-dos follow the kept donor's owner
+  UPDATE next_steps SET assigned_to = keep_row.owner_id
+   WHERE donor_id = keep_id AND NOT done;
 
   -- Free dup's email first (emails are unique), then fill keep's blanks.
   -- dup's original email is still in donor_sources.raw.
@@ -445,14 +465,16 @@ CREATE POLICY gifts_read ON gifts FOR SELECT USING (can_access_donor(donor_id));
 CREATE POLICY gifts_admin ON gifts FOR ALL
   USING (is_admin()) WITH CHECK (is_admin());
 
--- communications: read with the donor; log/send only as yourself;
--- edit only system drafts or your own messages (history can't be rewritten)
+-- communications: read with the donor; log/send only as yourself.
+-- Only drafts can be edited (system drafts or your own); sent/skipped
+-- messages are history and only an admin can correct them.
 CREATE POLICY comms_read ON communications FOR SELECT USING (can_access_donor(donor_id));
 CREATE POLICY comms_insert ON communications FOR INSERT
   WITH CHECK (can_access_donor(donor_id) AND (user_id = auth.uid() OR is_admin()));
 CREATE POLICY comms_update ON communications FOR UPDATE
   USING (can_access_donor(donor_id)
-         AND (user_id IS NULL OR user_id = auth.uid() OR is_admin()))
+         AND (is_admin()
+              OR (status = 'draft' AND (user_id IS NULL OR user_id = auth.uid()))))
   WITH CHECK (can_access_donor(donor_id) AND (user_id = auth.uid() OR is_admin()));
 
 -- next_steps: anyone who can see the donor (fundraising can bulk-create invites)
