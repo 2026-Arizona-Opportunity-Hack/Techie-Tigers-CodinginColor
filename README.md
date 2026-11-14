@@ -46,7 +46,7 @@ Judges score **Scope, Documentation, Polish and Security**, plus a separate **Ac
 <!-- Replace with real people; link GitHub profiles so this repo works as your portfolio -->
 - [Lucas Chavez](https://github.com/viatenp) — role
 - [David Tang](https://github.com/davidmtang7) — role
-- [Tommy](https://github.com/halfoj) — role
+- [Tommy Truong](https://github.com/halfoj) — role
 
 ## What we built
 
