@@ -235,6 +235,33 @@ export const createNextStep = (step: {
 export const completeNextStep = (id: number) =>
   apiFetch(`/next-steps/${id}/done`, { method: "POST" });
 
+export type OpenStep = {
+  id: number;
+  donor_id: number;
+  description: string;
+  due_date: string; // YYYY-MM-DD
+};
+
+// Every unfinished next step, grouped by donor, soonest first. Read straight
+// from the next_steps table with the user's own login: row-level security
+// limits board members to steps on their own donors. Unlike /me/queue, this
+// isn't cut off at 7 days out.
+export async function getOpenNextSteps(): Promise<Map<number, OpenStep[]>> {
+  const { data, error } = await supabase
+    .from("next_steps")
+    .select("id, donor_id, description, due_date")
+    .eq("done", false)
+    .order("due_date");
+  if (error) throw new ApiError(0, error.message);
+  const byDonor = new Map<number, OpenStep[]>();
+  for (const s of data as OpenStep[]) {
+    const list = byDonor.get(s.donor_id);
+    if (list) list.push(s);
+    else byDonor.set(s.donor_id, [s]);
+  }
+  return byDonor;
+}
+
 // ---- Outreach (backend/app/routers/communications.py) ----
 // Every message is drafted by the system or a person, opened in the sender's
 // own Gmail or Messages app, sent by hand, and then marked sent here.

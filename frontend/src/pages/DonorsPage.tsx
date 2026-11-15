@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowUpRight, Search, Users } from "lucide-react";
 
+import NextStepCell from "../components/NextStepCell";
 import RetentionBadge from "../components/RetentionBadge";
 import {
   getDonors,
+  getOpenNextSteps,
   getRetentionStatuses,
   formatMoney,
   RETENTION_STATUSES,
   type Donor,
+  type OpenStep,
   type RetentionStatus,
 } from "../lib/api";
 import { retentionLabel } from "../lib/retentionStyle";
@@ -24,6 +27,25 @@ export default function DonorsPage() {
   const [filter, setFilter] = useState("all");
   const [retention, setRetention] = useState<Map<number, RetentionStatus>>(new Map());
   const [retentionFilter, setRetentionFilter] = useState("all");
+
+  // Next steps are only shown to board members, on their own donors.
+  const isBoard = role === "board";
+  const [steps, setSteps] = useState<Map<number, OpenStep[]>>(new Map());
+  const [stepsError, setStepsError] = useState("");
+
+  const loadSteps = useCallback(() => {
+    if (!isBoard) return;
+    getOpenNextSteps()
+      .then((s) => {
+        setSteps(s);
+        setStepsError("");
+      })
+      .catch((err: Error) => setStepsError(err.message));
+  }, [isBoard]);
+
+  useEffect(() => {
+    loadSteps();
+  }, [loadSteps]);
 
   // The backend decides which donors come back: board members only get
   // their own, staff get everyone. No filtering by role happens here.
@@ -129,6 +151,12 @@ export default function DonorsPage() {
         </select>
       </div>
 
+      {stepsError && (
+        <p role="alert" className="text-sm text-[#9A3B2E]">
+          Couldn't load next steps: {stepsError}
+        </p>
+      )}
+
       {/* Donor Table */}
       <div className="overflow-x-auto border border-[#D8DED4] bg-[#FBF9F3]">
         {error ? (
@@ -141,7 +169,9 @@ export default function DonorsPage() {
           </div>
         ) : (
           <>
-            <table className="w-full min-w-[820px] text-left">
+            <table
+              className={`w-full text-left ${isBoard ? "min-w-[1080px]" : "min-w-[820px]"}`}
+            >
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
                 <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
                   <th className="px-6 py-4 font-semibold">Donor</th>
@@ -154,6 +184,9 @@ export default function DonorsPage() {
                     {new Date().getFullYear()} giving
                   </th>
                   <th className="px-6 py-4 font-semibold">Status</th>
+                  {isBoard && (
+                    <th className="px-6 py-4 font-semibold">Next step</th>
+                  )}
                   <th className="px-6 py-4 font-semibold">
                     <span className="sr-only">Open</span>
                   </th>
@@ -210,6 +243,24 @@ export default function DonorsPage() {
                         {donor.active ? "Active" : "Inactive"}
                       </span>
                     </td>
+
+                    {isBoard && (
+                      // Clicks and keys inside this cell (typing, Enter to
+                      // save) must not open the donor page.
+                      <td
+                        className="cursor-default px-6 py-5"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <NextStepCell
+                          donorId={donor.id}
+                          donorName={donor.display_name}
+                          active={donor.active}
+                          steps={steps.get(donor.id) ?? []}
+                          onChange={loadSteps}
+                        />
+                      </td>
+                    )}
 
                     <td className="px-6 py-5">
                       <ArrowUpRight size={18} className="text-[#52705D]" aria-hidden="true" />
