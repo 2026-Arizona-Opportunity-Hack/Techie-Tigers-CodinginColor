@@ -78,6 +78,22 @@ Coding in Color's donors and funders lived in one spreadsheet plus separate Zeff
     - Contact links, not a sending service: thank-you and outreach messages are build as Gmail compose, mailto:, sms:, and tel: links. Nothing is sent from the server, and the project has no SendGrid and Twilio.
     - Google Fonts on the frontend
 
+### Rate limits
+
+The two most expensive endpoints are limited per logged-in user, in [backend/app/ratelimit.py](backend/app/ratelimit.py):
+
+| Endpoint | Limit | Why |
+|---|---|---|
+| `POST /communications/ai-update` | 10 per minute | Each call can hit the paid AI service |
+| `POST /imports/{source}` | 10 per minute (previews count) | File parsing and duplicate matching are the heaviest work on the server |
+
+Over the limit, the API returns `429 Too Many Requests` with a `Retry-After` header, and the app shows "Too many requests. Try again in N seconds."
+
+- Limits are per user, not per IP address, because users behind Render's proxy can share one IP.
+- Counts are kept in server memory and reset when the backend restarts. That's fine for a single Render instance; running more than one would need a shared store such as Redis.
+- Sign-in goes straight to Supabase Auth, which has its own limits (Supabase dashboard → Authentication → Rate Limits).
+- To change a limit, edit the `ratelimit.check(...)` line at the top of that endpoint.
+
 ## Run it locally
 
 You need Python 3.12+, Node 20+, and a Supabase project.
