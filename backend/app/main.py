@@ -2,6 +2,7 @@ import importlib
 import logging
 
 from fastapi import FastAPI
+from .routers import me, donors, imports, communications
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
@@ -22,7 +23,9 @@ app.add_middleware(
 @app.get("/health", tags=["health"])
 def health():
     return {"status": "ok"}
-
+    
+for r in (me, donors, imports):
+    app.include_router(r.router)
 
 # Every router file in app/routers/. A file that hasn't been written yet is
 # skipped with a warning instead of crashing the server, so teammates can
