@@ -148,6 +148,24 @@ export default function DonorDetails() {
   }
 
   const { donor, open, history } = data;
+
+  // Thank-yous that count, matching the backend's rule: sent or still a draft
+  // (not dismissed). A gift is "thanked" if one is dated on or after the gift.
+  const thankYouDates = [...open, ...history]
+    .filter(
+      (i) =>
+        i.type === "message" &&
+        i.title.startsWith("thank you") &&
+        i.status !== "skipped" &&
+        i.date
+    )
+    .map((i) => ({ date: i.date!.slice(0, 10), sent: i.status === "sent" }));
+  const thankedState = (giftDate: string | null) => {
+    const match = thankYouDates.filter((t) => giftDate && t.date >= giftDate);
+    if (match.some((t) => t.sent)) return "Thanked";
+    if (match.length > 0) return "Thank-you drafted";
+    return null;
+  };
   const contactButtons = [
     { label: "Email", href: links.gmail, icon: Mail, newTab: true },
     { label: "Text", href: links.sms, icon: MessageSquare, newTab: false },
@@ -236,7 +254,16 @@ export default function DonorDetails() {
                   key={`${item.type}-${item.id}`}
                   item={item}
                   action={
-                    item.type === "gift" && donor.active ? (
+                    item.type === "gift" && donor.active && thankedState(item.date) ? (
+                      <button
+                        type="button"
+                        disabled
+                        aria-label={`${thankedState(item.date)} for the ${item.title}`}
+                        className="cursor-not-allowed border border-[#D8DED4] px-2.5 py-1 text-xs text-[#9AA49A]"
+                      >
+                        {thankedState(item.date) === "Thanked" ? "✓ Thanked" : "Thank-you drafted"}
+                      </button>
+                    ) : item.type === "gift" && donor.active ? (
                       <button
                         type="button"
                         onClick={() => thank(item.id)}
