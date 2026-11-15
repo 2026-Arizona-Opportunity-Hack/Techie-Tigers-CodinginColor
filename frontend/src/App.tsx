@@ -16,6 +16,7 @@ import DonorsPage from "./pages/DonorsPage.tsx";
 import DonorDetails from "./pages/DonorDetails";
 import FollowUpsPage from "./pages/FollowUpsPage";
 import ImportsPage from "./pages/ImportsPage";
+import RetentionPage from "./pages/RetentionPage";
 
 export default function App() {
   return (
@@ -71,6 +72,12 @@ export default function App() {
           <Route
             path="imports"
             element={<ImportsPage />}
+          />
+
+          {/* Year-over-year retention */}
+          <Route
+            path="retention"
+            element={<RetentionPage />}
           />
 
           {/* Other Dashboard Sections */}

@@ -296,3 +296,32 @@ export const draftQuarterlyUpdates = () =>
     "/jobs/quarterly-drafts",
     { method: "POST" }
   );
+
+// ---- Retention (backend/app/routers/reports.py) ----
+export const RETENTION_STATUSES = [
+  "lapsed", "decreased", "retained", "increased", "reactivated", "new",
+] as const;
+export type RetentionStatus = (typeof RETENTION_STATUSES)[number];
+
+export type RetentionYear = {
+  year: number;
+  in_progress: boolean; // the current year: "lapsed" means "not yet this year"
+  counts: Record<RetentionStatus, number>;
+  donors_giving: number;
+  total_raised: number;
+  retention_rate: number | null; // % of last year's donors who gave again
+  lost_from_lapsed: number; // what lapsed donors gave last year
+  gained_from_new: number;
+};
+
+export type RetentionReport = {
+  years: RetentionYear[];
+  selected: RetentionYear | null;
+  call_list: { donor_id: number; donor_name: string; gave_last_year: number; owner_name: string | null }[];
+  by_owner: ({ owner_name: string; retention_rate: number | null } & Record<RetentionStatus, number>)[];
+};
+
+// Board members get the same report for their own donors only.
+export const getRetention = (year?: number) =>
+  apiFetch<RetentionReport>(`/reports/retention${year ? `?year=${year}` : ""}`);
+
