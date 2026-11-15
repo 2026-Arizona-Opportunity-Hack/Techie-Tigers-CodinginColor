@@ -10,8 +10,6 @@ import {
   Upload,
   FileText,
   LogOut,
-  CalendarDays,
-  Megaphone,
   UserCog,
   KeyRound,
   CopyCheck,
@@ -48,12 +46,8 @@ export const roleMenus = {
   fundraising: [
     { label: "Overview", path: "overview", icon: LayoutDashboard },
     { label: "All Donors", path: "donors", icon: Users },
-    { label: "Campaigns", path: "campaigns", icon: Megaphone },
     { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
-    { label: "Outreach Activity", path: "outreach", icon: Mail },
-    { label: "Events", path: "events", icon: CalendarDays },
-    { label: "CSV Imports", path: "imports", icon: Upload },
-    { label: "Exports", path: "exports", icon: FileText },
+    { label: "Board Members", path: "members", icon: UserCog },
   ],
 };
 

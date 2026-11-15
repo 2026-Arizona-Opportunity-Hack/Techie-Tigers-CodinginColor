@@ -44,20 +44,39 @@ Judges score **Scope, Documentation, Polish and Security**, plus a separate **Ac
 ## Team
 
 <!-- Replace with real people; link GitHub profiles so this repo works as your portfolio -->
-- [Lucas Chavez](https://github.com/viatenp) — role
-- [David Tang](https://github.com/davidmtang7) — role
-- [Tommy Truong](https://github.com/halfoj) — role
+- [Lucas Chavez](https://github.com/viatenp) — Backend
+- [David Tang](https://github.com/davidmtang7) — Backend
+- [Tommy Truong](https://github.com/halfoj) — Front End
 
 ## What we built
 
 <!-- Two or three sentences: the problem, who it helps, what the nonprofit can do now that they couldn't before -->
+Coding in Color's donors and funders lived in one spreadsheet plus separate Zeffy and Benevity exports, board members tracked outreach on handwritten lists, and follow-ups were forgotten whenever the next emergenct hit. Our platform merges every source into one deduplicated donor list, gives each board member their own donors with reminders and ready-to-send thank-you and quarterly drafts, and keeps a person in charge of every message that goes out. Now CIC can see which donors gave more, gave less, or stopped giving year over year, send a funder their full gift history and outcomes in one click, and feed live donor totals to its dashboard, instead of rebuilding all of it by hand for every grant.
 
 ## Tech stack
 
 - Frontend:
+    - React 19 + TypeScript 6, built with Vite 8
+    - React Router 7 for routing
+    - Tailwind CSS 4
+    - Lucide-react for icons
+    - Supabase-js for login and sessions in the browser
+    - ESLint 10 with typescript-eslint for linting
 - Backend:
+    - Python with FastAPI, run on Uvicorn
+    - Pydantic 2 and pydantic-settings for request models and config, python-dotenv for .env files
+    - Pandas and openpyxl to import CSV and Excel files
+    - RapidFuzz for fuzzy duplicate-donor matching
+    - PyJWT to verify Supabase login tokens
+    - Routers: donors, imports, communications, reports, exports, next_steps, admin, me, public_api
 - Database:
+    - Supabasae (hosted Postgres), reached through the supabase Python client (postgREST)
+    - The schema is i backend/database/database.sql, with migrations in backend/database/migrations/
 - APIs / services:
+    - Supabase Auth: users sign in on the frontend, and the backend checks their JWT and role
+    - The project's own public read API: GET/api/v1/summary, protected by an X-API-KEY header. It returns totals only, no donor personal info, and the admins create and revoke the keys
+    - Contact links, not a sending service: thank-you and outreach messages are build as Gmail compose, mailto:, sms:, and tel: links. Nothing is sent from the server, and the project has no SendGrid, Twilio or AI/LLM API
+    - Google Fonts on the frontend
 
 ## Run it locally
 
