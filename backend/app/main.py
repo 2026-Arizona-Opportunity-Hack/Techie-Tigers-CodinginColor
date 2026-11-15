@@ -5,7 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import donors, me
+
+log = logging.getLogger(__name__)
 
 app = FastAPI(title="Coding in Color — Donor & Funder Platform API")
 
@@ -23,5 +24,29 @@ def health():
     return {"status": "ok"}
 
 
-app.include_router(me.router)
-app.include_router(donors.router)
+# Every router file in app/routers/. A file that hasn't been written yet is
+# skipped with a warning instead of crashing the server, so teammates can
+# merge their routers one at a time. Any OTHER import error (a typo or a
+# missing package inside a router) still stops startup, so real bugs show up.
+ROUTERS = [
+    "me",
+    "donors",
+    "imports",
+    "communications",
+    "next_steps",
+    "reports",
+    "exports",
+    "public_api",
+    "admin",
+]
+
+for name in ROUTERS:
+    module_path = f"{__package__}.routers.{name}"
+    try:
+        module = importlib.import_module(module_path)
+    except ModuleNotFoundError as e:
+        if e.name == module_path:
+            log.warning("Router '%s' not written yet; skipping", name)
+            continue
+        raise
+    app.include_router(module.router)
