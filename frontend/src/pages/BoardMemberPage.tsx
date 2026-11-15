@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
+import { useAuth } from "../auth/AuthProvider";
 import {
   getBoardMember,
   getMemberDonors,
+  setBoardMemberActive,
   formatDate,
   formatMoney,
   type BoardMemberDetail,
@@ -34,6 +36,36 @@ export default function BoardMemberPage() {
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Only the CEO can deactivate or reactivate (the backend and database enforce this too).
+  const auth = useAuth();
+  const canEdit = auth.status === "ready" && auth.role === "admin";
+  const [saving, setSaving] = useState(false);
+  const [statusError, setStatusError] = useState("");
+  async function toggleActive() {
+    if (!member) return;
+    const next = !member.active;
+    if (
+      !next &&
+      !window.confirm(
+        `Mark ${member.name} inactive? They won't be able to log in or get new donors.` +
+          (member.donors > 0
+            ? ` Their ${member.donors} active donor${member.donors === 1 ? "" : "s"} stay with them until you reassign them.`
+            : "")
+      )
+    )
+      return;
+    setSaving(true);
+    setStatusError("");
+    try {
+      const res = await setBoardMemberActive(member.id, next);
+      setMember({ ...member, active: res.active });
+    } catch (err) {
+      setStatusError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!allowed || !memberId) return;
@@ -97,11 +129,28 @@ export default function BoardMemberPage() {
       {back}
 
       {/* Heading */}
-      <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
-          Team / Board members {member.active ? "" : "/ Inactive"}
-        </p>
-        <h2 className="mt-3 font-display text-5xl text-[#183E32]">{member.name}</h2>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
+            Team / Board members {member.active ? "" : "/ Inactive"}
+          </p>
+          <h2 className="mt-3 font-display text-5xl text-[#183E32]">{member.name}</h2>
+        </div>
+        {canEdit && (
+          <div className="flex flex-col items-end gap-2">
+            <button
+              type="button"
+              onClick={toggleActive}
+              disabled={saving}
+              className="inline-flex cursor-pointer items-center gap-2 border border-[#183E32] px-4 py-2 text-sm text-[#183E32] transition-colors hover:bg-[#183E32] hover:text-[#F5F0E6] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
+            >
+              {saving ? "Saving…" : member.active ? "Mark inactive" : "Reactivate"}
+            </button>
+            {statusError && (
+              <p role="alert" className="text-sm text-[#9A3B2E]">{statusError}</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Headline numbers */}

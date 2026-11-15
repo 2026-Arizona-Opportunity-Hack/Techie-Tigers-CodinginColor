@@ -474,6 +474,12 @@ export type BoardMemberDetail = BoardMember & { retention: RetentionYear[] };
 export const getBoardMembers = () => apiFetch<BoardMember[]>("/admin/board-members");
 export const getBoardMember = (id: string) =>
   apiFetch<BoardMemberDetail>(`/admin/board-members/${encodeURIComponent(id)}`);
+// CEO only: mark a board member active or inactive.
+export const setBoardMemberActive = (id: string, active: boolean) =>
+  apiFetch<{ id: string; name: string; active: boolean }>(
+    `/admin/board-members/${encodeURIComponent(id)}`,
+    { method: "PATCH", body: JSON.stringify({ active }) },
+  );
 export const getMemberDonors = (ownerId: string) =>
   apiFetch<Donor[]>(`/donors?limit=500&include_inactive=true&owner_id=${encodeURIComponent(ownerId)}`);
 

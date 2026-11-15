@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from ..auth import CurrentUser, require_roles
 from ..common import fetch_all
 from .reports import year_summary
@@ -122,3 +123,23 @@ def board_member_detail(member_id: str,
         "gift_count": len(gifts),
         "retention": series,  # oldest year first; the last entry is the latest year
     }
+
+
+class MemberStatusIn(BaseModel):
+    active: bool
+
+
+@router.patch("/board-members/{member_id}")
+def set_board_member_active(member_id: str, body: MemberStatusIn,
+                            user: CurrentUser = Depends(require_roles("admin"))):
+    """CEO only: mark a board member active or inactive. An inactive member can't
+    log in and gets no new round-robin donors. Donors they already own stay with
+    them until the CEO reassigns them (the owner picker flags the old owner)."""
+    if not any(m["id"] == member_id for m in _board_members(user.db)):
+        raise HTTPException(404, "Board member not found")
+    res = (user.db.table("users").update({"active": body.active})
+           .eq("id", member_id).eq("role", "board_member").execute())
+    if not res.data:
+        raise HTTPException(403, "Couldn't update this board member")
+    row = res.data[0]
+    return {"id": row["id"], "name": row["name"], "active": row["active"]}
