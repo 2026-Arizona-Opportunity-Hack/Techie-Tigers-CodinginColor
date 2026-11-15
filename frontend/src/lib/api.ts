@@ -355,3 +355,47 @@ export type BoardMemberSummary = {
 
 export const getBoardSummary = () =>
   apiFetch<{ members: BoardMemberSummary[]; unassigned_donors: number }>("/admin/board-summary");
+
+// ---- Duplicate review (CEO only) ----
+// The importer flags likely duplicates (same phone or very similar name) in
+// duplicate_candidates; nothing is merged automatically. These calls use the
+// CEO's own Supabase session: row-level security limits the table to admins,
+// and merge_donors() refuses anyone who isn't an admin.
+export type DuplicatePair = {
+  id: number;
+  donor_id: number;
+  candidate_id: number;
+  score: number;
+  reason: string;
+};
+
+export async function getDuplicatePairs(): Promise<DuplicatePair[]> {
+  const { data, error } = await supabase
+    .from("duplicate_candidates")
+    .select("id, donor_id, candidate_id, score, reason")
+    .eq("status", "pending")
+    .order("score", { ascending: false });
+  if (error) throw new ApiError(0, error.message);
+  return data as DuplicatePair[];
+}
+
+// Moves gifts, messages, follow-ups and sources onto keepId, fills keepId's
+// blank contact fields, and retires dupId. All or nothing.
+export async function mergeDonors(keepId: number, dupId: number) {
+  const { error } = await supabase.rpc("merge_donors", { keep_id: keepId, dup_id: dupId });
+  if (error) throw new ApiError(0, error.message);
+}
+
+export async function markNotDuplicate(pairId: number, reviewerId: string) {
+  const { data, error } = await supabase
+    .from("duplicate_candidates")
+    .update({
+      status: "not_duplicate",
+      reviewed_by: reviewerId,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", pairId)
+    .select("id");
+  if (error) throw new ApiError(0, error.message);
+  if (!data?.length) throw new ApiError(403, "Only an admin can review duplicates.");
+}
