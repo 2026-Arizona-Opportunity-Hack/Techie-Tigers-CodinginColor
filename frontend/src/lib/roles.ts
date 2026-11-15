@@ -9,6 +9,7 @@ import {
   Upload,
   UserCog,
   KeyRound,
+  GraduationCap,
   CopyCheck,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const roleMenus = {
     { label: "CSV Imports", path: "imports", icon: Upload },
     { label: "Duplicate Review", path: "duplicates", icon: CopyCheck },
     { label: "Board Members", path: "members", icon: UserCog },
+    { label: "Programs", path: "programs", icon: GraduationCap },
     { label: "API Keys", path: "api-keys", icon: KeyRound },
   ],
 
