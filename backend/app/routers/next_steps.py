@@ -4,7 +4,7 @@ from postgrest.exceptions import APIError
 from pydantic import BaseModel
 from ..auth import CurrentUser, get_current_user, require_roles
 from ..common import fetch_all, chunks, get_donor_or_404, donor_display_name
-from ..db import service_client as sdb
+from ..db import service_client
 from ..templates import quarterly_update
 
 router = APIRouter(tags=["next steps"])  # no prefix: paths below are written in full
@@ -124,6 +124,7 @@ def my_queue(user: CurrentUser = Depends(get_current_user)):
 
 @router.post("/jobs/quarterly-drafts")
 def quarterly_drafts(user: CurrentUser = Depends(require_roles("admin"))):
+    sdb = service_client()  # system job: drafts for every board member's donors
     since = (date.today() - timedelta(days=90)).isoformat()
     donors = fetch_all(lambda: sdb.table("donors")
                        .select("id, first_name, last_name, organization_name, email, phone")

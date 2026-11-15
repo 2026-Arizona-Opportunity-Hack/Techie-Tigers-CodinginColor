@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..auth import User, require_roles
 from ..common import fetch_all, user_names, donor_display_name
 from ..db import service_client
+from ..importers.dedupe import find_duplicates_for
 from ..importers.normalize import clean, norm_email, norm_phone
 from ..templates import contact_links
 
@@ -173,7 +174,7 @@ class DonorIn(BaseModel):
     email: str | None = None
     phone: str | None = None
     donor_type: Literal["individual", "funder"] = "individual"
-    owner_id: str | None = None  # staff only; ignored for board members
+    owner_id: str | None = None  # admin only; ignored for everyone else
 
 
 class DonorEdit(BaseModel):
@@ -202,16 +203,40 @@ def add_donor(body: DonorIn, user: User):
     }
     if not any((row["first_name"], row["last_name"], row["organization_name"])):
         raise HTTPException(422, "A name or organization is required")
-    try:
-        if user.role == "board_member":
-            row["owner_id"] = user.id
-            return user.db.table("donors").insert(row).execute().data[0]
-        # Staff: RLS only lets admins insert, so use the service client after the role check.
-        # owner_id None -> the round-robin trigger picks the owner.
+    # Who owns the new donor:
+    #   board member -> themselves
+    #   admin        -> body.owner_id, or round-robin if not given
+    #   fundraising  -> always round-robin (only the CEO assigns owners)
+    # The database enforces the same rules (donors_staff_insert policy and the
+    # round-robin trigger), so this is just the friendly version.
+    if user.role == "board_member":
+        row["owner_id"] = user.id
+    elif user.is_admin:
         row["owner_id"] = body.owner_id
-        return service_client.table("donors").insert(row).execute().data[0]
+    try:
+        donor = user.db.table("donors").insert(row).execute().data[0]
     except APIError as e:
         _db_error(e)
+    donor["possible_duplicates"] = _queue_duplicates(donor)
+    return donor
+
+
+def _queue_duplicates(donor: dict) -> int:
+    """Run the import's fuzzy match on a hand-added donor and queue any hits
+    for the CEO's review. Returns only a count: a board member can't see other
+    members' donors, so we don't say who matched."""
+    sdb = service_client()  # must compare against ALL donors, not just the ones RLS shows this user
+    others = fetch_all(lambda: sdb.table("donors").select(
+        "id, first_name, last_name, organization_name, email, phone, active, merged_into"))
+    pairs = []
+    for other_id, score, reason in find_duplicates_for(donor, others):
+        lo, hi = sorted((donor["id"], other_id))
+        pairs.append({"donor_id": lo, "candidate_id": hi, "score": score,
+                      "reason": f"{reason} (added by hand)"})
+    if pairs:
+        sdb.table("duplicate_candidates").upsert(
+            pairs, on_conflict="donor_id,candidate_id", ignore_duplicates=True).execute()
+    return len(pairs)
 
 
 @router.patch("/{donor_id}")

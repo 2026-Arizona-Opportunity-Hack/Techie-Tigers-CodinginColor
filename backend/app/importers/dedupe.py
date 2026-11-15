@@ -288,15 +288,56 @@ def build_plan(rows: list[tuple[int, dict]], mapping: dict[str, str],
     return plan
 
 
-def _find_fuzzy_duplicates(plan: Plan, existing: Existing, anon_label: str):
-    anon_key = name_key(None, None, anon_label)
-    people: dict[Ref, tuple[str, str | None, str | None]] = {}  # ref -> (name, phone, email)
-    for d in existing.donors:
+Person = tuple[str, str | None, str | None]  # (display name, normalized phone, normalized email)
+
+
+def _existing_people(donors: list[dict], anon_label: str | None = None) -> dict[Ref, Person]:
+    """Active, un-merged donors that have a name, keyed by id."""
+    anon_key = name_key(None, None, anon_label) if anon_label else None
+    people: dict[Ref, Person] = {}
+    for d in donors:
         if d.get("merged_into") or not d.get("active", True):
             continue
         name = display_name(d.get("first_name"), d.get("last_name"), d.get("organization_name"))
         if name and name_key(None, None, name) != anon_key:
             people[d["id"]] = (name, norm_phone(d.get("phone")), norm_email(d.get("email")))
+    return people
+
+
+def _matches(ref: Ref, people: dict[Ref, Person], choices: dict[Ref, str]):
+    """Yield (other_ref, score, reason) for everyone who looks like `ref`.
+    Same rules for imports and manual adds: name score >= NAME_MATCH, or a
+    looser name match plus the same phone. Exact-email pairs are skipped
+    because those are auto-merged (or blocked by the unique index), not reviewed."""
+    name, phone, email = people[ref]
+    for _, score, other in process.extract(
+            name, choices, scorer=fuzz.token_sort_ratio,
+            score_cutoff=NAME_MATCH_SAME_PHONE, limit=10):
+        if other == ref:
+            continue
+        _, other_phone, other_email = people[other]
+        if email and other_email and email == other_email:
+            continue
+        same_phone = bool(phone and phone == other_phone)
+        if score >= NAME_MATCH or same_phone:
+            yield other, round(score, 2), f"name {score:.0f}" + (" + same phone" if same_phone else "")
+
+
+def find_duplicates_for(donor: dict, all_donors: list[dict]) -> list[tuple[int, float, str]]:
+    """Fuzzy matches for ONE donor (e.g. one just added by hand) against all others.
+    `donor` must include its id; `all_donors` may include it too (it's skipped)."""
+    people = _existing_people(all_donors)
+    people[donor["id"]] = (
+        display_name(donor.get("first_name"), donor.get("last_name"), donor.get("organization_name")),
+        norm_phone(donor.get("phone")), norm_email(donor.get("email")))
+    if not people[donor["id"]][0]:
+        return []
+    choices = {ref: name for ref, (name, _, _) in people.items()}
+    return list(_matches(donor["id"], people, choices))
+
+
+def _find_fuzzy_duplicates(plan: Plan, existing: Existing, anon_label: str):
+    people = _existing_people(existing.donors, anon_label)
     for nd in plan.new_donors:
         if nd.active:
             people[nd.ref] = (display_name(nd.first_name, nd.last_name, nd.organization_name),
@@ -307,20 +348,9 @@ def _find_fuzzy_duplicates(plan: Plan, existing: Existing, anon_label: str):
     for nd in plan.new_donors:
         if not nd.active or nd.ref not in people:
             continue
-        name, phone, email = people[nd.ref]
-        for _, score, other in process.extract(
-                name, choices, scorer=fuzz.token_sort_ratio,
-                score_cutoff=NAME_MATCH_SAME_PHONE, limit=10):
-            if other == nd.ref:
+        for other, score, reason in _matches(nd.ref, people, choices):
+            pair = frozenset((nd.ref, other))
+            if pair in seen:
                 continue
-            _, other_phone, other_email = people[other]
-            same_phone = bool(phone and phone == other_phone)
-            if email and other_email and email == other_email:
-                continue  # exact email is handled by auto-merge, not review
-            if score >= NAME_MATCH or same_phone:
-                pair = frozenset((nd.ref, other))
-                if pair in seen:
-                    continue
-                seen.add(pair)
-                reason = f"name {score:.0f}" + (" + same phone" if same_phone else "")
-                plan.candidates.append((nd.ref, other, round(score, 2), reason))
+            seen.add(pair)
+            plan.candidates.append((nd.ref, other, score, reason))

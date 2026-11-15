@@ -227,9 +227,14 @@ $$;
 -- Round-robin: a new active donor with no owner goes to the active board
 -- member with the fewest ACTIVE donors. The lock stops two imports
 -- picking the same person.
+-- Fundraising can add donors but not choose the owner (only the CEO assigns),
+-- so any owner they send is dropped and round-robin picks one.
 CREATE OR REPLACE FUNCTION assign_owner_round_robin() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
+  IF is_staff() AND NOT is_admin() THEN
+    NEW.owner_id := NULL;
+  END IF;
   IF NEW.owner_id IS NULL AND NEW.active THEN
     PERFORM pg_advisory_xact_lock(4242);
     SELECT u.id INTO NEW.owner_id
@@ -453,7 +458,7 @@ CREATE POLICY donors_read ON donors FOR SELECT
 CREATE POLICY donors_update ON donors FOR UPDATE
   USING (owner_id = auth.uid() OR is_admin())
   WITH CHECK (owner_id = auth.uid() OR is_admin());
-CREATE POLICY donors_admin_insert ON donors FOR INSERT WITH CHECK (is_admin());
+CREATE POLICY donors_staff_insert ON donors FOR INSERT WITH CHECK (is_staff());  -- admin + fundraising
 CREATE POLICY donors_member_insert ON donors FOR INSERT   -- board member adds a contact
   WITH CHECK (owner_id = auth.uid());
 

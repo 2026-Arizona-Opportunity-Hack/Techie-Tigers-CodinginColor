@@ -139,7 +139,7 @@ def mark_sent(cid: int, user: CurrentUser = Depends(get_current_user)):
         raise HTTPException(404, "Draft not found")
     if c["kind"] == "thank_you":
         # Fundraising can't update donors under RLS, so set this one field server-side
-        service_client.table("donors").update(
+        service_client().table("donors").update(
             {"last_thanked_at": now_iso()}).eq("id", c["donor_id"]).execute()
     return res.data[0]
 

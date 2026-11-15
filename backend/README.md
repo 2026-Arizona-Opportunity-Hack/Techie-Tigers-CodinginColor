@@ -48,5 +48,8 @@ app/
   routers/       one file per resource (me, donors, ...)
 ```
 
+Schema changes go in `database/database.sql` (for fresh setups) **and** a dated file
+in `database/migrations/` to run once in the Supabase SQL editor on the existing database.
+
 To add an endpoint: create `app/routers/<thing>.py` with an `APIRouter`, take
 `user: User` as a parameter, query `user.db`, and include the router in `main.py`.
