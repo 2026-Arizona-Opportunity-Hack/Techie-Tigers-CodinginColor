@@ -1,3 +1,5 @@
+import { AuthProvider } from "./auth/AuthProvider";
+import RequireAuth from "./components/RequireAuth";
 
 import {
   BrowserRouter,
@@ -16,6 +18,7 @@ import FollowUpsPage from "./pages/FollowUpsPage";
 
 export default function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <Routes>
         <Route
@@ -25,7 +28,14 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
 
-        <Route path="/:role" element={<DashboardLayout />}>
+        <Route
+          path="/:role"
+          element={
+            <RequireAuth>
+              <DashboardLayout />
+            </RequireAuth>
+          }
+        >
           <Route
             index
             element={<Navigate to="overview" replace />}
@@ -69,5 +79,6 @@ export default function App() {
         />
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }

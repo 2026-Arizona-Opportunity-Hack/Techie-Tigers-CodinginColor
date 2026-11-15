@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Asterisk, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../auth/AuthProvider";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,7 +12,22 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+
+  const auth = useAuth();
+  const navigate = useNavigate();
+
+  // Once /me tells us the role, go to that dashboard.
+  // This also skips the login page if you're already signed in.
+  const destination =
+    auth.status === "ready" ? `/${auth.role}/overview` : null;
+
+  useEffect(() => {
+    if (destination) navigate(destination, { replace: true });
+  }, [destination, navigate]);
+
+  const busy = loading || auth.status === "loading";
+  const shownError =
+    error || (auth.status === "error" ? auth.message : "");
 
   async function handleLogin(
     e: React.FormEvent<HTMLFormElement>
@@ -18,7 +35,6 @@ export default function Login() {
     e.preventDefault();
 
     setError("");
-    setSuccess("");
 
     if (!email.trim() || !password) {
       setError("Please enter your email and password.");
@@ -42,13 +58,8 @@ export default function Login() {
         throw new Error("Unable to establish a session.");
       }
 
-      // Login succeeded!
-      // We'll navigate to the correct dashboard once
-      // the backend provides the user's verified role.
-      setSuccess(
-        "Signed in successfully! Dashboard access " +
-        "will be connected next."
-      );
+      // Nothing else to do: AuthProvider sees the new session,
+      // calls /me, and the useEffect above redirects.
     } catch (err) {
       setError(
         err instanceof Error
@@ -110,7 +121,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@codingincolor.net"
-                disabled={loading}
+                disabled={busy}
                 className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
               />
             </div>
@@ -133,7 +144,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  disabled={loading}
+                  disabled={busy}
                   className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
                 />
 
@@ -155,26 +166,19 @@ export default function Login() {
             </div>
 
             {/* ERROR MESSAGE */}
-            {error && (
+            {shownError && (
               <p role="alert" className="text-sm text-red-700">
-                {error}
-              </p>
-            )}
-
-            {/* SUCCESS MESSAGE */}
-            {success && (
-              <p role="status" className="text-sm text-[#183E32]">
-                {success}
+                {shownError}
               </p>
             )}
 
             {/* SIGN IN */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={busy}
               className="flex w-full cursor-pointer items-center justify-between bg-[#183E32] px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-[#285745] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#183E32] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {busy ? "Signing in..." : "Sign in"}
               <ArrowRight size={19} />
             </button>
           </form>

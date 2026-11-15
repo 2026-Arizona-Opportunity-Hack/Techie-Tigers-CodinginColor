@@ -18,6 +18,7 @@ import {
   History,
   Asterisk,
 } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
 
 export type Role = "admin" | "board" | "fundraising";
 
@@ -69,6 +70,7 @@ export default function Sidebar({
   onNavigate,
 }: SidebarProps) {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   return (
     <aside className="flex h-full min-h-screen w-64 flex-col bg-[#183E32] text-[#F5F0E6]">
@@ -117,14 +119,15 @@ export default function Sidebar({
       {/* Bottom */}
       <div className="border-t border-[#416354] p-4">
         <button
-          onClick={() => {
+          onClick={async () => {
             onNavigate?.();
+            await signOut();
             navigate("/login");
           }}
           className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-sm text-[#C6D7CC] hover:bg-[#254C3E] hover:text-white"
         >
           <LogOut size={18} />
-          Exit Preview
+          Sign out
         </button>
       </div>
     </aside>
