@@ -3,7 +3,6 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  HeartHandshake,
   CalendarCheck,
   Mail,
   ChartNoAxesCombined,
@@ -23,7 +22,6 @@ export const roleMenus = {
   admin: [
     { label: "Overview", path: "overview", icon: LayoutDashboard },
     { label: "All Donors", path: "donors", icon: Users },
-    { label: "Donations", path: "donations", icon: HeartHandshake },
     { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
     { label: "Outreach", path: "outreach", icon: Mail },
     { label: "CSV Imports", path: "imports", icon: Upload },
