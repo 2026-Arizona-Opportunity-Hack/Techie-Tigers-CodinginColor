@@ -6,10 +6,12 @@ POST /imports/{source}                 import for real
 Admin and fundraising only. Writes use the service-role client (imports are
 server-side work in the schema's design), so the role check below is the guard.
 Uploading the same file twice is safe: rows already imported are skipped.
+New gifts from the last 30 days get a thank-you draft for the donor's owner.
 """
 
 import csv
 import io
+from datetime import date, timedelta
 from enum import Enum
 from typing import Annotated
 
@@ -20,6 +22,7 @@ from ..auth import CurrentUser, require_role
 from ..db import service_client
 from ..importers.dedupe import Existing, Plan, build_plan
 from ..importers.mapping import find_header_row, map_columns
+from .communications import create_thank_you_draft
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -27,6 +30,7 @@ MAX_BYTES = 5 * 1024 * 1024
 MAX_ROWS = 20_000
 CHUNK = 500
 IDENTITY_FIELDS = ("email", "first_name", "last_name", "full_name", "organization_name")
+THANK_YOU_WINDOW_DAYS = 30  # only draft thank-yous for gifts this recent
 
 
 class Source(str, Enum):
@@ -110,12 +114,31 @@ def chunks(items: list, n: int = CHUNK):
         yield items[i:i + n]
 
 
+def draft_thank_yous(db, new_gifts: list[dict]) -> int:
+    """Thank-you drafts for recent gifts. Best effort: a failure here never undoes
+    the import, and create_thank_you_draft skips inactive donors, donors with no
+    email or phone, and donors already thanked since the gift."""
+    cutoff = (date.today() - timedelta(days=THANK_YOU_WINDOW_DAYS)).isoformat()
+    drafted = 0
+    for g in new_gifts:
+        if g["gift_date"] < cutoff:
+            continue
+        try:
+            if create_thank_you_draft(db, g["id"]):  # user_id None = system draft
+                drafted += 1
+        except Exception:
+            continue
+    return drafted
+
+
 def apply_plan(db, plan: Plan, existing: Existing) -> dict:
     """Write in an order that keeps a re-run safe if something fails midway:
     donors -> donor_sources (marks rows as imported) -> gifts -> review queue."""
     ids: dict[str, int] = {}
     done = {"donors_created": 0, "donors_updated": 0, "sources_created": 0,
-            "gifts_created": 0, "duplicate_candidates_created": 0, "donors_without_owner": 0}
+            "gifts_created": 0, "duplicate_candidates_created": 0, "donors_without_owner": 0,
+            "thank_you_drafts": 0}
+    new_gifts: list[dict] = []
 
     def resolve(ref) -> int:
         return ids[ref] if isinstance(ref, str) else ref
@@ -144,7 +167,7 @@ def apply_plan(db, plan: Plan, existing: Existing) -> dict:
             done["sources_created"] += len(batch)
 
         for batch in chunks(plan.gifts):
-            db.table("gifts").insert([strip_ref(g) for g in batch]).execute()
+            new_gifts += db.table("gifts").insert([strip_ref(g) for g in batch]).execute().data
             done["gifts_created"] += len(batch)
 
         pairs, seen = [], set(existing.candidate_pairs)
@@ -165,6 +188,9 @@ def apply_plan(db, plan: Plan, existing: Existing) -> dict:
             "saved_so_far": done,
             "error": str(exc)[:300],
         })
+
+    # After everything is saved, so a problem drafting can't interrupt the import itself
+    done["thank_you_drafts"] = draft_thank_yous(db, new_gifts)
     return done
 
 
