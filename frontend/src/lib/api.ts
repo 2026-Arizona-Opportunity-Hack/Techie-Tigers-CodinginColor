@@ -355,3 +355,23 @@ export type BoardMemberSummary = {
 
 export const getBoardSummary = () =>
   apiFetch<{ members: BoardMemberSummary[]; unassigned_donors: number }>("/admin/board-summary");
+
+// ---- Board members (backend/app/routers/admin.py; admin + fundraising only) ----
+export type BoardMember = {
+  id: string;
+  name: string;
+  active: boolean;
+  donors: number; // active donors they own
+  total_raised: number; // all-time, from donors they own now
+  raised_this_year: number;
+  gift_count: number;
+};
+
+
+export type BoardMemberDetail = BoardMember & { retention: RetentionYear[] };
+
+export const getBoardMembers = () => apiFetch<BoardMember[]>("/admin/board-members");
+export const getBoardMember = (id: string) =>
+  apiFetch<BoardMemberDetail>(`/admin/board-members/${encodeURIComponent(id)}`);
+export const getMemberDonors = (ownerId: string) =>
+  apiFetch<Donor[]>(`/donors?limit=500&include_inactive=true&owner_id=${encodeURIComponent(ownerId)}`);

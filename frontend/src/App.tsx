@@ -18,6 +18,8 @@ import FollowUpsPage from "./pages/FollowUpsPage";
 import ImportsPage from "./pages/ImportsPage";
 import RetentionPage from "./pages/RetentionPage";
 import OverviewPage from "./pages/OverviewPage";
+import BoardMembersPage from "./pages/BoardMembersPage";
+import BoardMemberPage from "./pages/BoardMemberPage";
 
 export default function App() {
   return (
@@ -69,7 +71,7 @@ export default function App() {
             element={<OutreachPage />} 
           />
 
-          {/* CSV / Excel imports (admin and fundraising) */}
+          {/* CSV / Excel imports (admin only) */}
           <Route
             path="imports"
             element={<ImportsPage />}
@@ -85,6 +87,16 @@ export default function App() {
           <Route
             path="overview"
             element={<OverviewPage />}
+          />
+
+          {/* Board members (admin and fundraising) */}
+          <Route
+            path="members"
+            element={<BoardMembersPage />}
+          />
+          <Route
+            path="members/:memberId"
+            element={<BoardMemberPage />}
           />
 
           {/* Other Dashboard Sections */}

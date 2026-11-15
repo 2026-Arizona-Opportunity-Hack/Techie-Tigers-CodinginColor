@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import { AlertTriangle, CheckCircle2, FileUp, RotateCcw } from "lucide-react";
 
 import { ApiError, importFile, type ImportResult, type ImportSource } from "../lib/api";
@@ -70,6 +70,9 @@ export default function ImportsPage() {
   const [error, setError] = useState<{ message: string; headers?: string[] } | null>(null);
 
   const busy = step === "previewing" || step === "importing";
+
+  // Imports are admin-only (the backend refuses everyone else).
+  if (role !== "admin") return <Navigate to={`/${role}/overview`} replace />;
 
   function reset() {
     setFile(null);

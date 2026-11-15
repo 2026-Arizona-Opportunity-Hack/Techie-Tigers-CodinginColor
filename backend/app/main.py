@@ -17,6 +17,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+    # Lets the browser read the filename on CSV downloads (exports).
+    expose_headers=["Content-Disposition"],
 )
 
 

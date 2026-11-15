@@ -3,7 +3,7 @@
 POST /imports/{source}?dry_run=true   preview: what would be created, nothing saved
 POST /imports/{source}                 import for real
 
-Admin and fundraising only. Writes use the service-role client (imports are
+Admin only. Writes use the service-role client (imports are
 server-side work in the schema's design), so the role check below is the guard.
 Uploading the same file twice is safe: rows already imported are skipped.
 New gifts from the last 30 days get a thank-you draft for the donor's owner.
@@ -200,7 +200,7 @@ def apply_plan(db, plan: Plan, existing: Existing) -> dict:
 async def import_file(
     source: Source,
     file: Annotated[UploadFile, File(description="CSV or XLSX export")],
-    user: Annotated[CurrentUser, Depends(require_role("admin", "fundraising"))],
+    user: Annotated[CurrentUser, Depends(require_role("admin"))],
     dry_run: Annotated[bool, Query(description="Preview only; nothing is saved")] = False,
 ):
     data = await file.read(MAX_BYTES + 1)

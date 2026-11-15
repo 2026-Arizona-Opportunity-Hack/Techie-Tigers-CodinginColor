@@ -28,7 +28,6 @@ const statsByRole = {
     { label: "Total Raised", value: "$42,500", icon: HeartHandshake },
     { label: "Active Donors", value: "124", icon: Users },
     { label: "Outreach Pending", value: "22", icon: Mail },
-    { label: "Upcoming Events", value: "3", icon: CalendarDays },
   ],
 };
 
