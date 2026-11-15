@@ -49,4 +49,8 @@ for name in ROUTERS:
             log.warning("Router '%s' not written yet; skipping", name)
             continue
         raise
+    if not hasattr(module, "router"):
+        # Placeholder file (e.g. empty) that doesn't define `router` yet.
+        log.warning("Router '%s' has no `router` yet; skipping", name)
+        continue
     app.include_router(module.router)
