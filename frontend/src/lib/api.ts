@@ -341,3 +341,17 @@ export async function getRetentionStatuses(
     (data as { donor_id: number; status: RetentionStatus }[]).map((r) => [r.donor_id, r.status])
   );
 }
+
+// ---- Board outreach summary (backend/app/routers/admin.py), CEO + fundraising ----
+export type BoardMemberSummary = {
+  id: string;
+  name: string;
+  donors: number; // active donors they own
+  touched_90d: number; // of those, contacted in the last 90 days
+  touched_pct: number | null;
+  overdue_steps: number;
+  last_outreach_90d: string | null;
+};
+
+export const getBoardSummary = () =>
+  apiFetch<{ members: BoardMemberSummary[]; unassigned_donors: number }>("/admin/board-summary");

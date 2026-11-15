@@ -17,6 +17,7 @@ import DonorDetails from "./pages/DonorDetails";
 import FollowUpsPage from "./pages/FollowUpsPage";
 import ImportsPage from "./pages/ImportsPage";
 import RetentionPage from "./pages/RetentionPage";
+import OverviewPage from "./pages/OverviewPage";
 
 export default function App() {
   return (
@@ -78,6 +79,12 @@ export default function App() {
           <Route
             path="retention"
             element={<RetentionPage />}
+          />
+
+          {/* Overview (every role) */}
+          <Route
+            path="overview"
+            element={<OverviewPage />}
           />
 
           {/* Other Dashboard Sections */}
