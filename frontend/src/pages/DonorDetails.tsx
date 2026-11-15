@@ -19,6 +19,8 @@ import {
   formatDate,
   formatMoney,
   getContactLinks,
+  getRetentionStatuses,
+  type RetentionStatus,
   getDonorTimeline,
   getFunderPacket,
   type ContactLinks,
@@ -26,6 +28,7 @@ import {
   type TimelineItem,
 } from "../lib/api";
 import { useAuth } from "../auth/AuthProvider";
+import RetentionBadge from "../components/RetentionBadge";
 
 // Funder packet: gifts, totals by year/program, and the outcomes they funded.
 // Admin and fundraising only (the backend refuses board members).
@@ -205,6 +208,19 @@ export default function DonorDetails() {
     };
   }, [id]);
 
+  // This year's retention category for the badge in the header.
+  const [retention, setRetention] = useState<{ id: number; status?: RetentionStatus }>();
+  useEffect(() => {
+    if (!Number.isInteger(id)) return;
+    let cancelled = false;
+    getRetentionStatuses()
+      .then((m) => !cancelled && setRetention({ id, status: m.get(id) }))
+      .catch(() => !cancelled && setRetention({ id }));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   // "Thank" on a gift: draft a thank-you, then open it in Outreach to review and send.
   const navigate = useNavigate();
   const [thankingGift, setThankingGift] = useState<number | null>(null);
@@ -299,6 +315,17 @@ export default function DonorDetails() {
             {donor.active ? "Active" : "Inactive"} · Owner:{" "}
             {donor.owner_name ?? "Unassigned"}
           </p>
+
+          {retention?.id === donor.id && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-[#829087]">
+              {new Date().getFullYear()} giving:
+              <RetentionBadge
+                status={retention.status}
+                lastGiftDate={donor.last_gift_date}
+                giftCount={donor.gift_count}
+              />
+            </div>
+          )}
         </div>
 
         {contactButtons.length > 0 && (
