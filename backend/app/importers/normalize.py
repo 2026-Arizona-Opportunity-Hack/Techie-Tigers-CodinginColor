@@ -8,13 +8,15 @@ from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 
-_BLANKS = {"", "nan", "none", "null", "n/a", "na", "-", "--"}
+_BLANKS = {"", "nan", "none", "null", "n/a", "na", "-", "--", "not shared by donor", "not shared"}
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # Name keys (see name_key) that mean "we don't know who this is".
 _ANONYMOUS = {
     "anonymous", "anon", "anonymous donor", "anonymous anonymous",
     "not shared", "not shared by donor", "private", "private donor",
 }
+
+
 
 
 def clean(value) -> str | None:
