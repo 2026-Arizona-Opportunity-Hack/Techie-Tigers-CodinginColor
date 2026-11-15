@@ -2,6 +2,7 @@
 `Authorization: Bearer <access_token>`. We verify it with Supabase and load
 the matching row from our `users` table."""
 
+import logging
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -11,6 +12,7 @@ from supabase import Client
 
 from .db import service_client, user_client
 
+log = logging.getLogger(__name__)
 bearer = HTTPBearer(auto_error=False)
 
 
@@ -40,7 +42,10 @@ def get_current_user(
     token = creds.credentials
     try:
         auth_user = service_client().auth.get_user(token).user
-    except Exception:
+    except Exception as e:
+        # Bad/expired tokens land here, but so do network errors. Log the real
+        # cause so a Supabase outage doesn't look like "everyone's token is bad".
+        log.warning("Token check failed: %s", e)
         auth_user = None
     if auth_user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
@@ -72,5 +77,7 @@ def require_role(*roles: str):
 
     return check
 
+
+require_roles = require_role  # the build guide uses the plural name
 
 User = Annotated[CurrentUser, Depends(get_current_user)]
