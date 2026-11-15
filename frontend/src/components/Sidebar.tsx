@@ -11,7 +11,6 @@ import {
   UserCog,
   KeyRound,
   CopyCheck,
-  History,
   Asterisk,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
@@ -36,7 +35,6 @@ export const roleMenus = {
     { label: "Follow-ups", path: "followups", icon: CalendarCheck },
     { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
     { label: "Outreach", path: "outreach", icon: Mail },
-    { label: "Activity History", path: "history", icon: History },
   ],
 
   fundraising: [
