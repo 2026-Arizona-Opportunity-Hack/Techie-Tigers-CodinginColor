@@ -7,11 +7,12 @@ import {
   useParams,
 } from "react-router-dom";
 import { Menu, X, Bell, CircleUserRound } from "lucide-react";
-import Sidebar, {
+import Sidebar from "./Sidebar";
+import {
   roleMenus,
   roleNames,
   type Role,
-} from "./Sidebar";
+} from "../lib/roles";
 
 export default function DashboardLayout() {
   const { role } = useParams();

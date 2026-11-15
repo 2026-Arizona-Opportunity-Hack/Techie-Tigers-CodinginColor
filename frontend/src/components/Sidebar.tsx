@@ -1,55 +1,8 @@
 
 import { NavLink, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  CalendarCheck,
-  Mail,
-  ChartNoAxesCombined,
-  Upload,
-  LogOut,
-  UserCog,
-  KeyRound,
-  CopyCheck,
-  Asterisk,
-} from "lucide-react";
+import { LogOut, Asterisk } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-
-export type Role = "admin" | "board" | "fundraising";
-
-export const roleMenus = {
-  admin: [
-    { label: "Overview", path: "overview", icon: LayoutDashboard },
-    { label: "All Donors", path: "donors", icon: Users },
-    { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
-    { label: "Outreach", path: "outreach", icon: Mail },
-    { label: "CSV Imports", path: "imports", icon: Upload },
-    { label: "Duplicate Review", path: "duplicates", icon: CopyCheck },
-    { label: "Board Members", path: "members", icon: UserCog },
-    { label: "API Keys", path: "api-keys", icon: KeyRound },
-  ],
-
-  board: [
-    { label: "My Dashboard", path: "overview", icon: LayoutDashboard },
-    { label: "My Donors", path: "donors", icon: Users },
-    { label: "Follow-ups", path: "followups", icon: CalendarCheck },
-    { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
-    { label: "Outreach", path: "outreach", icon: Mail },
-  ],
-
-  fundraising: [
-    { label: "Overview", path: "overview", icon: LayoutDashboard },
-    { label: "All Donors", path: "donors", icon: Users },
-    { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
-    { label: "Board Members", path: "members", icon: UserCog },
-  ],
-};
-
-export const roleNames: Record<Role, string> = {
-  admin: "CEO / Admin",
-  board: "Board Member",
-  fundraising: "Fundraising",
-};
+import { roleMenus, roleNames, type Role } from "../lib/roles";
 
 interface SidebarProps {
   role: Role;
