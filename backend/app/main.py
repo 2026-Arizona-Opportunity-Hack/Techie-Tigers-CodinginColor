@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import donors, me
+from .routers import donors, imports, me
 
 app = FastAPI(title="Coding in Color — Donor & Funder Platform API")
 
@@ -22,3 +22,4 @@ def health():
 
 app.include_router(me.router)
 app.include_router(donors.router)
+app.include_router(imports.router)
