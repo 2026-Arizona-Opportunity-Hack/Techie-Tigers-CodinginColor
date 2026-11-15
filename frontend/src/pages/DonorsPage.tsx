@@ -1,46 +1,49 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowUpRight,
-  Search,
-  Users,
-} from "lucide-react";
+import { ArrowUpRight, Search, Users } from "lucide-react";
 
-import {
-  mockDonors,
-  donorName,
-  formatMoney,
-} from "../data/mockDonors.ts";
+import { getDonors, formatMoney, type Donor } from "../lib/api";
 
 export default function DonorsPage() {
   const { role } = useParams();
   const navigate = useNavigate();
 
+  const [donors, setDonors] = useState<Donor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
-  // Temporary demo filtering. Real access control
-  // must be enforced by the backend.
-  const visibleDonors =
-    role === "board"
-      ? mockDonors.filter(
-          (d) => d.owner === "Demo Board Member"
-        )
-      : mockDonors;
+  // The backend decides which donors come back: board members only get
+  // their own, staff get everyone. No filtering by role happens here.
+  useEffect(() => {
+    let cancelled = false;
+    getDonors()
+      .then((rows) => {
+        if (!cancelled) setDonors(rows);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const filteredDonors = visibleDonors.filter((donor) => {
-    const query = search.toLowerCase();
-
+  const query = search.trim().toLowerCase();
+  const filteredDonors = donors.filter((donor) => {
     const matchesSearch =
-      donorName(donor).toLowerCase().includes(query) ||
-      donor.email.toLowerCase().includes(query);
-
-    const matchesType =
-      filter === "all" || donor.donor_type === filter;
-
+      !query ||
+      donor.display_name.toLowerCase().includes(query) ||
+      (donor.email ?? "").toLowerCase().includes(query);
+    const matchesType = filter === "all" || donor.donor_type === filter;
     return matchesSearch && matchesType;
   });
+
+  const openDonor = (id: number) => navigate(`/${role}/donors/${id}`);
 
   return (
     <div className="space-y-8">
@@ -63,7 +66,7 @@ export default function DonorsPage() {
         <div className="flex items-center gap-2 border border-[#C8D2C7] px-4 py-3">
           <Users size={18} className="text-[#52705D]" />
           <span className="text-sm font-semibold">
-            {visibleDonors.length} donors
+            {loading ? "…" : donors.length} donors
           </span>
         </div>
       </div>
@@ -76,6 +79,7 @@ export default function DonorsPage() {
           <input
             type="search"
             placeholder="Search name or email..."
+            aria-label="Search donors by name or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-transparent py-4 text-sm outline-none"
@@ -96,77 +100,93 @@ export default function DonorsPage() {
 
       {/* Donor Table */}
       <div className="overflow-x-auto border border-[#D8DED4] bg-[#FBF9F3]">
-        <table className="w-full min-w-[650px] text-left">
-          <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-            <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
-              <th className="px-6 py-4 font-semibold">Donor</th>
-              <th className="px-6 py-4 font-semibold">Type</th>
-              <th className="px-6 py-4 font-semibold">Total given</th>
-              <th className="px-6 py-4 font-semibold">Status</th>
-              <th className="px-6 py-4 font-semibold"></th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredDonors.map((donor) => (
-              <tr
-                key={donor.id}
-                onClick={() =>
-                  navigate(`/${role}/donors/${donor.id}`)
-                }
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    navigate(`/${role}/donors/${donor.id}`);
-                  }
-                }}
-                className="cursor-pointer border-b border-[#E3E7DF] transition-colors last:border-0 hover:bg-[#EDF0E8] focus-visible:outline-2 focus-visible:outline-[#183E32]"
-              >
-                <td className="px-6 py-5">
-                  <p className="text-sm font-semibold text-[#242A26]">
-                    {donorName(donor)}
-                  </p>
-
-                  <p className="mt-1 text-xs text-[#819083]">
-                    {donor.email}
-                  </p>
-                </td>
-
-                <td className="px-6 py-5 text-sm capitalize">
-                  {donor.donor_type}
-                </td>
-
-                <td className="px-6 py-5 text-sm font-semibold text-[#183E32]">
-                  {formatMoney(donor.total_donated)}
-                </td>
-
-                <td className="px-6 py-5">
-                  <span className="border border-[#A9C3AE] px-3 py-1 text-xs text-[#42674C]">
-                    {donor.active ? "Active" : "Inactive"}
-                  </span>
-                </td>
-
-                <td className="px-6 py-5">
-                  <ArrowUpRight
-                    size={18}
-                    className="text-[#52705D]"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredDonors.length === 0 && (
-          <div className="p-12 text-center text-sm text-[#819083]">
-            No donors match your search.
+        {error ? (
+          <div role="alert" className="p-12 text-center text-sm text-[#9A3B2E]">
+            Couldn't load donors: {error}
           </div>
+        ) : loading ? (
+          <div role="status" className="p-12 text-center text-sm text-[#819083]">
+            Loading donors…
+          </div>
+        ) : (
+          <>
+            <table className="w-full min-w-[650px] text-left">
+              <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
+                <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+                  <th className="px-6 py-4 font-semibold">Donor</th>
+                  <th className="px-6 py-4 font-semibold">Type</th>
+                  {role !== "board" && (
+                    <th className="px-6 py-4 font-semibold">Owner</th>
+                  )}
+                  <th className="px-6 py-4 font-semibold">Total given</th>
+                  <th className="px-6 py-4 font-semibold">Status</th>
+                  <th className="px-6 py-4 font-semibold">
+                    <span className="sr-only">Open</span>
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredDonors.map((donor) => (
+                  <tr
+                    key={donor.id}
+                    onClick={() => openDonor(donor.id)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") openDonor(donor.id);
+                    }}
+                    className="cursor-pointer border-b border-[#E3E7DF] transition-colors last:border-0 hover:bg-[#EDF0E8] focus-visible:outline-2 focus-visible:outline-[#183E32]"
+                  >
+                    <td className="px-6 py-5">
+                      <p className="text-sm font-semibold text-[#242A26]">
+                        {donor.display_name}
+                      </p>
+                      <p className="mt-1 text-xs text-[#819083]">
+                        {donor.email ?? "No email"}
+                      </p>
+                    </td>
+
+                    <td className="px-6 py-5 text-sm capitalize">
+                      {donor.donor_type}
+                    </td>
+
+                    {role !== "board" && (
+                      <td className="px-6 py-5 text-sm">
+                        {donor.owner_name ?? "Unassigned"}
+                      </td>
+                    )}
+
+                    <td className="px-6 py-5 text-sm font-semibold text-[#183E32]">
+                      {formatMoney(donor.lifetime_total)}
+                      <span className="ml-2 text-xs font-normal text-[#819083]">
+                        {donor.gift_count} {donor.gift_count === 1 ? "gift" : "gifts"}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <span className="border border-[#A9C3AE] px-3 py-1 text-xs text-[#42674C]">
+                        {donor.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <ArrowUpRight size={18} className="text-[#52705D]" aria-hidden="true" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {filteredDonors.length === 0 && (
+              <div className="p-12 text-center text-sm text-[#819083]">
+                {donors.length === 0
+                  ? "No donors yet. Import a spreadsheet, Zeffy, or Benevity export to get started."
+                  : "No donors match your search."}
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      <p className="text-xs text-[#829087]">
-        Sample data for frontend development.
-      </p>
     </div>
   );
 }
