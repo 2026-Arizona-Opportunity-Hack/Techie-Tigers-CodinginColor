@@ -62,19 +62,30 @@ def thank_you(donor: dict, amount, program: str | None,
     )
 
 
-def quarterly_update(donor: dict, outcomes: list[dict]) -> tuple[str, str]:
+def quarterly_update(donor: dict, outcomes: list[dict],
+                     given_this_year: float = 0, gave_before: bool = False) -> tuple[str, str]:
     """outcomes: rows like {"year": 2026, "description": "...", "programs": {"name": "..."}},
-    newest year first. Uses only the latest year's outcomes."""
+    newest year first. Uses only the latest year's outcomes.
+    given_this_year: the donor's total gifts since January 1.
+    gave_before: whether they gave in any earlier year."""
     latest_year = outcomes[0]["year"] if outcomes else None
     highlights = "\n".join(
         f"- {(o.get('programs') or {}).get('name', 'Our programs')}: {o['description']}"
         for o in outcomes if o["year"] == latest_year
     ) or "- [Add this quarter's highlights]"
+    if given_this_year > 0:
+        opening = (f"Thank you for your {money(given_this_year)} in support this year. "
+                   "Here's what it helped make possible for Arizona high schoolers:")
+    elif gave_before:
+        opening = ("Thank you for your past support of Coding in Color. Here's what "
+                   "supporters like you made possible for Arizona high schoolers this year:")
+    else:
+        opening = ("Thank you for being part of Coding in Color. Here's what your support "
+                   "made possible for Arizona high schoolers this year:")
     subject = "Your quarterly update from Coding in Color"
     body = (
         f"Hi {first_name(donor)},\n\n"
-        "Thank you for being part of Coding in Color. Here's what your support "
-        "made possible for Arizona high schoolers this year:\n\n"
+        f"{opening}\n\n"
         f"{highlights}\n\n"
         "I'd love to tell you more, or show you a class in action at our next event."
         + SIGN_OFF

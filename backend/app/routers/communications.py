@@ -3,7 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
 from pydantic import BaseModel
-from ..auth import CurrentUser, get_current_user
+from ..auth import CurrentUser, get_current_user, require_roles
 from ..common import user_names, donor_display_name
 from ..db import service_client
 from ..templates import thank_you, contact_links
@@ -152,6 +152,18 @@ def skip(cid: int, user: CurrentUser = Depends(get_current_user)):
     if not res.data:
         raise HTTPException(404, "Draft not found")
     return res.data[0]
+
+
+@router.post("/drafts/dismiss-quarterly", dependencies=[Depends(require_roles("admin"))])
+def dismiss_quarterly_drafts(user: CurrentUser = Depends(get_current_user)):
+    """CEO only: dismiss every waiting quarterly-update draft at once, e.g. to
+    redo the batch after adding outcomes. Thank-yous and other drafts are left
+    alone. Nothing is deleted: drafts become 'skipped', like the per-draft
+    Dismiss, so the quarterly job can draft those donors again."""
+    res = (user.db.table("communications")
+           .update({"status": "skipped", "user_id": user.id})
+           .eq("status", "draft").eq("kind", "quarterly").execute())
+    return {"dismissed": len(res.data or [])}
 
 
 @router.get("")

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { CalendarClock, CheckCircle2, Lock, Mail, MessageSquare, Phone, Plus, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Lock, Mail, MessageSquare, Phone, Plus, Trash2, X } from "lucide-react";
 
 import { useAuth } from "../auth/AuthProvider";
 import {
@@ -14,6 +14,7 @@ import {
   logOutreach,
   markSent,
   skipDraft,
+  dismissQuarterlyDrafts,
   type Donor,
   type MessageSummary,
 } from "../lib/api";
@@ -39,6 +40,9 @@ const primaryButton =
   "inline-flex items-center gap-2 bg-[#183E32] px-5 py-3 text-sm font-semibold text-white hover:bg-[#285745] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]";
 const secondaryButton =
   "inline-flex items-center gap-2 border border-[#183E32] px-5 py-3 text-sm font-semibold text-[#183E32] hover:bg-[#EDF0E8] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]";
+
+const dangerButton =
+  "inline-flex items-center gap-2 border border-[#B4472F] px-5 py-3 text-sm font-semibold text-[#7A2E22] hover:bg-[#FBF1EE] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7A2E22]";
 
 export default function OutreachPage() {
   const { role } = useParams();
@@ -84,6 +88,15 @@ export default function OutreachPage() {
       cancelled = true;
     };
   }, [tab, listKey]);
+
+  // A draft opened from a link (?draft=12) may be far down the list: bring its
+  // row into view so it's clear which draft is open.
+  useEffect(() => {
+    if (!selectedId || !messages.length) return;
+    document
+      .querySelector(`[data-message-id="${selectedId}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedId, messages.length]);
 
   // Load the selected message's full text.
   const selectedDonorId = selected?.donor_id;
@@ -255,6 +268,31 @@ export default function OutreachPage() {
     }
   }
 
+  // ---- Delete quarterly drafts (admin) ----
+  const [clearing, setClearing] = useState(false);
+  const quarterlyDraftCount =
+    tab === "draft" ? messages.filter((m) => m.kind === "quarterly").length : 0;
+  async function deleteQuarterlyDrafts() {
+    if (
+      !window.confirm(
+        `Delete all ${quarterlyDraftCount} quarterly update drafts waiting for review? None of them will be sent. Thank-yous and other drafts stay. You can draft quarterly updates again afterwards.`
+      )
+    )
+      return;
+    setClearing(true);
+    setActionError("");
+    try {
+      const r = await dismissQuarterlyDrafts();
+      if (selected?.kind === "quarterly") select(null);
+      setNotice(`${r.dismissed} quarterly draft${r.dismissed === 1 ? "" : "s"} deleted.`);
+      reload();
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setClearing(false);
+    }
+  }
+
   // ---- "Log a conversation" dialog ----
   const [showLog, setShowLog] = useState(false);
   const [donors, setDonors] = useState<Donor[] | null>(null);
@@ -319,6 +357,17 @@ export default function OutreachPage() {
               {drafting ? "Drafting…" : "Draft quarterly updates"}
             </button>
           )}
+          {me?.role === "admin" && quarterlyDraftCount > 0 && (
+            <button
+              type="button"
+              onClick={deleteQuarterlyDrafts}
+              disabled={clearing}
+              className={dangerButton}
+            >
+              <Trash2 size={18} aria-hidden="true" />
+              {clearing ? "Deleting…" : `Delete quarterly drafts (${quarterlyDraftCount})`}
+            </button>
+          )}
           <button type="button" onClick={openLog} className={primaryButton}>
             <Plus size={18} aria-hidden="true" />
             Log a conversation
@@ -373,10 +422,13 @@ export default function OutreachPage() {
                 <li key={m.id}>
                   <button
                     type="button"
+                    data-message-id={m.id}
                     onClick={() => select(m.id)}
                     aria-current={selectedId === m.id}
-                    className={`w-full border-b border-[#E0E4DB] p-5 text-left hover:bg-[#EDF0E8] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#183E32] ${
-                      selectedId === m.id ? "bg-[#E5EBE1]" : ""
+                    className={`w-full border-b border-l-4 border-b-[#E0E4DB] p-5 text-left hover:bg-[#EDF0E8] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#183E32] ${
+                      selectedId === m.id
+                        ? "border-l-[#183E32] bg-[#E5EBE1]"
+                        : "border-l-transparent"
                     }`}
                   >
                     <p className="text-sm font-semibold text-[#242A26]">{m.donor_name}</p>
@@ -416,6 +468,9 @@ export default function OutreachPage() {
                   {isDraft ? "Review draft." : "Sent message."}
                 </h3>
                 <p className="mt-2 text-sm text-[#5E6B61]">
+                  <span className="mr-2 inline-block border border-[#C8D2C7] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#183E32]">
+                    {selected.kind.replace(/_/g, "-")}
+                  </span>
                   To{" "}
                   <Link
                     to={`/${role}/donors/${selected.donor_id}`}

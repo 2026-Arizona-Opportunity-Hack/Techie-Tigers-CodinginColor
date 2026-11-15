@@ -308,6 +308,11 @@ export const markSent = (id: number) =>
 export const skipDraft = (id: number) =>
   apiFetch(`/communications/${id}/skip`, { method: "POST" });
 
+// CEO only: dismiss every waiting quarterly-update draft (they become
+// "skipped", not deleted). Thank-yous and other drafts are left alone.
+export const dismissQuarterlyDrafts = () =>
+  apiFetch<{ dismissed: number }>("/communications/drafts/dismiss-quarterly", { method: "POST" });
+
 // Record a call, text, email or meeting that already happened.
 export const logOutreach = (entry: {
   donor_id: number;
@@ -454,6 +459,78 @@ export const getBoardMember = (id: string) =>
   apiFetch<BoardMemberDetail>(`/admin/board-members/${encodeURIComponent(id)}`);
 export const getMemberDonors = (ownerId: string) =>
   apiFetch<Donor[]>(`/donors?limit=500&include_inactive=true&owner_id=${encodeURIComponent(ownerId)}`);
+
+// ---- Programs & outcomes (CEO only) ----
+// Programs are what gifts are designated to (matched by name on import);
+// outcomes are each program's results per year. Outcomes appear in quarterly
+// updates and funder packets. These use the CEO's own Supabase session:
+// row-level security lets everyone signed in read and only admins write.
+export type Program = { id: number; name: string };
+export type Outcome = { id: number; program_id: number; year: number; description: string };
+
+// Supabase errors -> plain messages. 23503 = still referenced by other rows.
+function dbError(error: { code?: string; message: string }, inUse?: string): ApiError {
+  if (error.code === "23503" && inUse) return new ApiError(409, inUse);
+  if (error.code === "42501") return new ApiError(403, "Only the CEO can change this.");
+  return new ApiError(0, error.message);
+}
+
+export async function getProgramsWithOutcomes(): Promise<{
+  programs: Program[];
+  outcomes: Outcome[];
+}> {
+  const [p, o] = await Promise.all([
+    supabase.from("programs").select("id, name").order("name"),
+    supabase
+      .from("outcomes")
+      .select("id, program_id, year, description")
+      .order("year", { ascending: false })
+      .order("id"),
+  ]);
+  if (p.error) throw dbError(p.error);
+  if (o.error) throw dbError(o.error);
+  return { programs: p.data as Program[], outcomes: o.data as Outcome[] };
+}
+
+// .select() after a write returns the rows changed; none means RLS refused it.
+function requireRow<T>(data: T[] | null): T {
+  if (!data?.length) throw new ApiError(403, "Only the CEO can change this.");
+  return data[0];
+}
+
+export async function createProgram(name: string): Promise<Program> {
+  const { data, error } = await supabase.from("programs").insert({ name }).select("id, name");
+  if (error) throw dbError(error);
+  return requireRow(data as Program[]);
+}
+
+export async function renameProgram(id: number, name: string) {
+  const { data, error } = await supabase.from("programs").update({ name }).eq("id", id).select("id");
+  if (error) throw dbError(error);
+  requireRow(data);
+}
+
+export async function deleteProgram(id: number) {
+  const { data, error } = await supabase.from("programs").delete().eq("id", id).select("id");
+  if (error)
+    throw dbError(
+      error,
+      "This program has gifts or outcomes linked to it, so it can't be deleted. Rename it instead."
+    );
+  requireRow(data);
+}
+
+export async function createOutcome(o: Omit<Outcome, "id">) {
+  const { data, error } = await supabase.from("outcomes").insert(o).select("id");
+  if (error) throw dbError(error);
+  requireRow(data);
+}
+
+export async function deleteOutcome(id: number) {
+  const { data, error } = await supabase.from("outcomes").delete().eq("id", id).select("id");
+  if (error) throw dbError(error);
+  requireRow(data);
+}
 
 // ---- API keys for CIC's org dashboard (backend/app/routers/public_api.py; admin only) ----
 export type ApiKey = {

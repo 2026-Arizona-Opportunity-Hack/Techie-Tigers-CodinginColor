@@ -138,6 +138,17 @@ def quarterly_drafts(user: CurrentUser = Depends(require_roles("admin"))):
     outcomes = (sdb.table("outcomes").select("year, description, programs(name)")
                 .order("year", desc=True).limit(8).execute().data)
 
+    # Each donor's giving, for the "thank you for your $X this year" line.
+    jan1 = date(date.today().year, 1, 1).isoformat()
+    given_this_year: dict[int, float] = {}
+    gave_before: set[int] = set()
+    for g in fetch_all(lambda: sdb.table("gifts").select("donor_id, amount, gift_date")):
+        if g["gift_date"] >= jan1:
+            given_this_year[g["donor_id"]] = (given_this_year.get(g["donor_id"], 0)
+                                              + float(g["amount"]))
+        else:
+            gave_before.add(g["donor_id"])
+
     rows, no_contact = [], 0
     for d in donors:
         if d["id"] in touched or d["id"] in already:
@@ -145,7 +156,9 @@ def quarterly_drafts(user: CurrentUser = Depends(require_roles("admin"))):
         if not d["email"] and not d["phone"]:
             no_contact += 1
             continue
-        subject, body = quarterly_update(d, outcomes)
+        subject, body = quarterly_update(d, outcomes,
+                                         given_this_year.get(d["id"], 0),
+                                         d["id"] in gave_before)
         rows.append({
             "donor_id": d["id"], "user_id": None,  # NULL = system draft
             "channel": "email" if d["email"] else "text",
