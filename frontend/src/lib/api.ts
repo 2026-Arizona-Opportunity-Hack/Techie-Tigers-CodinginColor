@@ -138,3 +138,45 @@ export function formatDate(value: string | null | undefined): string {
     ? value
     : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
+
+// ---- Follow-ups (backend/app/routers/next_steps.py) ----
+export type QueueStep = {
+  id: number;
+  donor_id: number;
+  donor_name: string;
+  description: string;
+  due_date: string; // YYYY-MM-DD
+  event_id: number | null;
+};
+
+export type QueueDraft = {
+  id: number;
+  donor_id: number;
+  donor_name: string;
+  kind: string; // thank_you | quarterly | follow_up | ...
+  channel: string | null;
+  subject: string | null;
+  created_at: string;
+  ai_generated: boolean;
+};
+
+// Everything the signed-in person owes, overdue first. Only steps due within
+// the next 7 days are included.
+export type MyQueue = {
+  counts: { overdue: number; this_week: number; drafts: number; quarterly_owed: number };
+  overdue: QueueStep[];
+  this_week: QueueStep[];
+  drafts_to_review: QueueDraft[];
+  quarterly_owed: { donor_id: number; donor_name: string }[]; // no contact in 90 days
+};
+
+export const getMyQueue = () => apiFetch<MyQueue>("/me/queue");
+
+export const createNextStep = (step: {
+  donor_id: number;
+  description: string;
+  due_date: string;
+}) => apiFetch("/next-steps", { method: "POST", body: JSON.stringify(step) });
+
+export const completeNextStep = (id: number) =>
+  apiFetch(`/next-steps/${id}/done`, { method: "POST" });
