@@ -1,0 +1,17 @@
+Name,Organization,Email,Phone,Amount,Date,Campaign,Program,Donor Type
+Dana Whitfield,Desert Bloom Foundation,grants@desertbloom.example.org,602-555-0190,"$10,000.00",3/1/2023,Annual Grant,AI Academy,Funder
+Dana Whitfield,Desert Bloom Foundation,grants@desertbloom.example.org,602-555-0190,"$12,500.00",3/4/2024,Annual Grant,AI Academy,Funder
+Dana Whitfield,Desert Bloom Foundation,grants@desertbloom.example.org,602-555-0190,"$15,000.00",3/3/2025,Annual Grant,AI Academy,Funder
+Dana Whitfield,Desert Bloom Foundation,grants@desertbloom.example.org,602-555-0190,"$15,000.00",3/2/2026,Annual Grant,AI Academy,Funder
+,Copper State Community Fund,giving@copperstate.example.org,480-555-0191,"$5,000.00",9/15/2024,Summer Camp Grant,Summer Camp,Funder
+,Copper State Community Fund,giving@copperstate.example.org,480-555-0191,"$5,000.00",9/12/2025,Summer Camp Grant,Summer Camp,Funder
+Leo Martins,Saguaro Tech Partners,leo.martins@saguarotech.example.com,,"$2,500.00","Jun 20, 2024",Day of Compute Sponsor,Day of Compute,Funder
+Leo Martins,Saguaro Tech Partners,leo.martins@saguarotech.example.com,,"$3,000.00","Jun 18, 2025",Day of Compute Sponsor,Day of Compute,Funder
+,Grand Canyon Learning Trust,info@gclt.example.org,,"$7,500.00",2026-01-20,K12 Expansion,K12 Programs,Funder
+Maria Garcia,,maria.garcia@example.com,602-555-0101,$200.00,5/9/2025,Day of Compute 2025,Day of Compute,Individual
+Jim Wilson,,jimmy.w@example.net,(602) 555-0142,$100.00,10/2/2025,Board Dinner 2025,,Individual
+Beatriz Soto,,beatriz.soto@example.com,623-555-0160,$500.00,12/15/2023,Year-End 2023,K12 Programs,Individual
+Beatriz Soto,,beatriz.soto@example.com,623-555-0160,$750.00,12/16/2024,Year-End 2024,K12 Programs,Individual
+Beatriz Soto,,beatriz.soto@example.com,623-555-0160,"$1,000.00",12/12/2025,Year-End 2025,K12 Programs,Individual
+Samuel Ortiz,,,480-555-0175,$60.00,4/22/2026,Spring Appeal 2026,,Individual
+Nina Park,,nina.park@example.org,,$40.00,sometime in spring,Spring Appeal 2026,,Individual

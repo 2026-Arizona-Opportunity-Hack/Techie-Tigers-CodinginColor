@@ -1,0 +1,18 @@
+Benevity Donation Report (SAMPLE - fictional data)
+Charity: Coding in Color
+Period: 2023-01-01 to 2026-10-31
+
+Transaction ID,Donor First Name,Donor Last Name,Email,Company,Project,Donation Date,Donation Amount,Match Amount,Total Donation to be Acknowledged
+BEN-5007,Omar,Haddad,omar.haddad@example.com,Valley Software Group (fictional),Day of Compute,2023-12-10,50.00,0.00,50.00
+BEN-5001,Rachel,Kim,rachel.kim@example.com,Sonoran Semiconductor Co. (fictional),AI Academy,2024-10-15,100.00,100.00,200.00
+BEN-5011,Grace,Patel,grace.patel@example.org,Mesa Grid Utilities (fictional),AI Academy,2024-12-01,1000.00,1000.00,2000.00
+BEN-5008,Omar,Haddad,omar.haddad@example.com,Valley Software Group (fictional),Day of Compute,2024-12-09,50.00,0.00,50.00
+BEN-5004,Tom,Alvarez,tom.alvarez@example.org,Mesa Grid Utilities (fictional),Summer Camp,2025-03-20,250.00,250.00,500.00
+BEN-5002,Rachel,Kim,rachel.kim@example.com,Sonoran Semiconductor Co. (fictional),AI Academy,2025-10-14,150.00,150.00,300.00
+BEN-5005,Hannah,Cho,hannah.cho@example.net,Sonoran Semiconductor Co. (fictional),K12 Programs,2025-11-01,500.00,500.00,1000.00
+BEN-5012,Grace,Patel,grace.patel@example.org,Mesa Grid Utilities (fictional),AI Academy,2025-12-01,1250.00,1250.00,2500.00
+BEN-5009,Omar,Haddad,omar.haddad@example.com,Valley Software Group (fictional),Day of Compute,2025-12-08,50.00,0.00,50.00
+BEN-5999,Anonymous,,,Valley Software Group (fictional),K12 Programs,2026-03-05,100.00,100.00,200.00
+BEN-5010,Omar,Haddad,omar.haddad@example.com,Valley Software Group (fictional),Day of Compute,2026-06-08,75.00,0.00,75.00
+BEN-5003,Rachel,Kim,rachel.kim@example.com,Sonoran Semiconductor Co. (fictional),AI Academy,2026-10-13,200.00,200.00,400.00
+BEN-5006,Hannah,Cho,hannah.cho@example.net,Sonoran Semiconductor Co. (fictional),K12 Programs,2026-11-01,200.00,200.00,400.00
