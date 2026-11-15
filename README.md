@@ -75,7 +75,7 @@ Coding in Color's donors and funders lived in one spreadsheet plus separate Zeff
 - APIs / services:
     - Supabase Auth: users sign in on the frontend, and the backend checks their JWT and role
     - The project's own public read API: GET /api/v1/summary, protected by an X-API-Key header. It returns totals only, no donor personal info, and the admins create and revoke the keys. Setup guide for CIC's dashboard owner: [docs/read-api.md](docs/read-api.md)
-    - Contact links, not a sending service: thank-you and outreach messages are build as Gmail compose, mailto:, sms:, and tel: links. Nothing is sent from the server, and the project has no SendGrid and Twilio.
+    - Contact links, not a sending service: thank-you and outreach messages are build as Gmail compose, mailto:, sms:, and tel: links. Nothing is sent from the server, and the project has no SendGrid and Twilio but that is a next step.
     - Google Fonts on the frontend
 
 ### Rate limits
