@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowUpRight, Search, Users } from "lucide-react";
 
 import NextStepCell from "../components/NextStepCell";
@@ -27,6 +27,10 @@ export default function DonorsPage() {
   const [filter, setFilter] = useState("all");
   const [retention, setRetention] = useState<Map<number, RetentionStatus>>(new Map());
   const [retentionFilter, setRetentionFilter] = useState("all");
+  // Staff only. "?owner=unassigned" (linked from the Overview) opens the list
+  // already filtered to donors with no board member.
+  const [searchParams] = useSearchParams();
+  const [ownerFilter, setOwnerFilter] = useState(searchParams.get("owner") ?? "all");
 
   // Next steps are only shown to board members, on their own donors.
   const isBoard = role === "board";
@@ -78,8 +82,20 @@ export default function DonorsPage() {
     const matchesType = filter === "all" || donor.donor_type === filter;
     const status = retention.get(donor.id) ?? "none";
     const matchesRetention = retentionFilter === "all" || status === retentionFilter;
-    return matchesSearch && matchesType && matchesRetention;
+    const matchesOwner =
+      isBoard ||
+      ownerFilter === "all" ||
+      (ownerFilter === "unassigned" ? !donor.owner_id : donor.owner_id === ownerFilter);
+    return matchesSearch && matchesType && matchesRetention && matchesOwner;
   });
+
+  // Owners that appear in the list, for the owner filter.
+  const owners = [
+    ...new Map(
+      donors.filter((d) => d.owner_id).map((d) => [d.owner_id!, d.owner_name ?? "Unknown"])
+    ),
+  ].sort((a, b) => a[1].localeCompare(b[1]));
+  const unassignedCount = donors.filter((d) => !d.owner_id).length;
 
   const openDonor = (id: number) => navigate(`/${role}/donors/${id}`);
 
@@ -149,6 +165,23 @@ export default function DonorsPage() {
           ))}
           <option value="none">No gift this year or last</option>
         </select>
+
+        {!isBoard && (
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            aria-label="Filter donors by board member owner"
+            className="border border-[#CDD5CB] bg-[#FBF9F3] px-5 py-3 text-sm outline-none focus-visible:outline-2 focus-visible:outline-[#183E32]"
+          >
+            <option value="all">All owners</option>
+            <option value="unassigned">Unassigned ({unassignedCount})</option>
+            {owners.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {stepsError && (

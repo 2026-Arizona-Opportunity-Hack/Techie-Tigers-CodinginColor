@@ -5,7 +5,7 @@ from datetime import date
 from html import escape
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, Response
 
 from ..auth import CurrentUser, require_roles
@@ -19,6 +19,8 @@ router = APIRouter(prefix="/exports", tags=["exports"])
 def build_packet(db, donor_id: int) -> dict:
     """Gather one funder's gifts, totals, and the outcomes their gifts funded."""
     donor = get_donor_or_404(db, donor_id)
+    if donor["donor_type"] != "funder":
+        raise HTTPException(400, "Funder packets are only for funders, not individual donors")
     gifts = fetch_all(lambda: db.table("gifts")
                       .select("gift_date, amount, campaign, source, program_id, programs(name)")
                       .eq("donor_id", donor_id).order("gift_date"))

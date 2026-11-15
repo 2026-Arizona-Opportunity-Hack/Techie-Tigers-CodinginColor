@@ -29,6 +29,7 @@ import {
 } from "../lib/api";
 import { useAuth } from "../auth/AuthProvider";
 import RetentionBadge from "../components/RetentionBadge";
+import OwnerPicker from "../components/OwnerPicker";
 
 // Funder packet: gifts, totals by year/program, and the outcomes they funded.
 // Admin and fundraising only (the backend refuses board members).
@@ -169,6 +170,10 @@ export default function DonorDetails() {
   const auth = useAuth();
   const canExport =
     auth.status === "ready" && (auth.role === "admin" || auth.role === "fundraising");
+  // Only the CEO assigns owners (the backend and database enforce this too).
+  const canReassign = auth.status === "ready" && auth.role === "admin";
+  // Bumped after a reassignment to reload the donor and its timeline.
+  const [version, setVersion] = useState(0);
 
   // Results are tagged with the donor id they belong to, so moving to another
   // donor shows "Loading…" instead of the previous donor's data.
@@ -206,7 +211,7 @@ export default function DonorDetails() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, version]);
 
   // This year's retention category for the badge in the header.
   const [retention, setRetention] = useState<{ id: number; status?: RetentionStatus }>();
@@ -312,9 +317,18 @@ export default function DonorDetails() {
 
           <p className="mt-3 text-sm text-[#5E6B61]">
             <span className="capitalize">{donor.donor_type}</span> ·{" "}
-            {donor.active ? "Active" : "Inactive"} · Owner:{" "}
-            {donor.owner_name ?? "Unassigned"}
+            {donor.active ? "Active" : "Inactive"}
+            {!canReassign && <> · Owner: {donor.owner_name ?? "Unassigned"}</>}
           </p>
+
+          {canReassign && (
+            <OwnerPicker
+              donorId={donor.id}
+              ownerId={donor.owner_id}
+              ownerName={donor.owner_name}
+              onChanged={() => setVersion((v) => v + 1)}
+            />
+          )}
 
           {retention?.id === donor.id && (
             <div className="mt-3 flex items-center gap-2 text-xs text-[#5E6B61]">
@@ -446,7 +460,8 @@ export default function DonorDetails() {
             )}
           </section>
 
-          {canExport && (
+          {/* Funder packets are for funders only; the backend refuses individuals. */}
+          {canExport && donor.donor_type === "funder" && (
             <FunderReport donorId={donor.id} donorName={donor.display_name} />
           )}
 

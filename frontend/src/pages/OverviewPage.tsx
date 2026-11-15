@@ -212,6 +212,12 @@ export default function OverviewPage() {
                   <AlertTriangle size={15} aria-hidden="true" />
                   {board.unassigned_donors} active donor
                   {board.unassigned_donors === 1 ? " has" : "s have"} no board member.
+                  <Link
+                    to={`/${role}/donors?owner=unassigned`}
+                    className="ml-1 font-semibold underline underline-offset-2 hover:text-[#183E32]"
+                  >
+                    {role === "admin" ? "Assign them" : "See them"}
+                  </Link>
                 </p>
               )}
 

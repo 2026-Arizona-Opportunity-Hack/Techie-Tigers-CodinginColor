@@ -144,6 +144,14 @@ export const getDonorTimeline = (id: number) =>
 export const getContactLinks = (id: number) =>
   apiFetch<ContactLinks>(`/donors/${id}/contact-links`);
 
+// CEO only: hand a donor to another active board member. Their open next
+// steps move to the new owner too (database trigger).
+export const reassignDonor = (id: number, ownerId: string) =>
+  apiFetch(`/donors/${id}/owner`, {
+    method: "PATCH",
+    body: JSON.stringify({ owner_id: ownerId }),
+  });
+
 // ---- Funder packet (backend/app/routers/exports.py; admin + fundraising only) ----
 // "html" is a print-ready page; "csv" is the gift history as a spreadsheet.
 // Every fetch is recorded in export_log on the backend.
