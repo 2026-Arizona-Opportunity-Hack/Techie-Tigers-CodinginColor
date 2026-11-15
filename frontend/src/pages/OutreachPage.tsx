@@ -27,6 +27,8 @@ type Detail = {
   subject: string;
   body: string;
   saved: { subject: string; body: string }; // what the server has, to detect edits
+  hasEmail: boolean; // which ways the donor can be reached
+  hasPhone: boolean;
   error?: string;
 };
 
@@ -96,12 +98,27 @@ export default function OutreachPage() {
         const subject = item?.subject ?? "";
         const body = item?.body ?? "";
         if (!cancelled)
-          setDetail({ id: selectedId, subject, body, saved: { subject, body } });
+          setDetail({
+            id: selectedId,
+            subject,
+            body,
+            saved: { subject, body },
+            hasEmail: !!t.donor.email,
+            hasPhone: !!t.donor.phone,
+          });
       })
       .catch(
         (err: Error) =>
           !cancelled &&
-          setDetail({ id: selectedId, subject: "", body: "", saved: { subject: "", body: "" }, error: err.message })
+          setDetail({
+            id: selectedId,
+            subject: "",
+            body: "",
+            saved: { subject: "", body: "" },
+            hasEmail: false,
+            hasPhone: false,
+            error: err.message,
+          })
       );
     return () => {
       cancelled = true;
@@ -140,6 +157,23 @@ export default function OutreachPage() {
       if (!current || !selected) return;
       await editDraft(selected.id, { subject: current.subject || null, body: current.body });
       setDetail({ ...current, saved: { subject: current.subject, body: current.body } });
+      reload();
+    });
+
+  // Send the same draft by email or by text instead. Saves any edits along with
+  // the switch. Emails need a subject, so one is filled in if the text had none.
+  const switchChannel = (channel: "email" | "text") =>
+    act(async () => {
+      if (!current || !selected || selected.channel === channel) return;
+      const subject =
+        channel === "email" && !current.subject.trim()
+          ? selected.kind === "thank_you"
+            ? "Thank you for your gift to Coding in Color"
+            : "A note from Coding in Color"
+          : current.subject;
+      await editDraft(selected.id, { channel, subject: subject || null, body: current.body });
+      setDetail({ ...current, subject, saved: { subject, body: current.body } });
+      setAwaitingSend(false);
       reload();
     });
 
@@ -393,6 +427,41 @@ export default function OutreachPage() {
                   {!isDraft && ` · sent by ${selected.sent_by ?? "someone"} on ${formatDate(selected.sent_at)}`}
                 </p>
               </div>
+
+              {isDraft && !draftOwnedByOther && current.hasEmail && current.hasPhone && (
+                <fieldset>
+                  <legend className="text-sm font-semibold">Send as</legend>
+                  <div className="mt-2 inline-flex border border-[#C8D2C7]">
+                    {(
+                      [
+                        { id: "email", label: "Email", icon: Mail },
+                        { id: "text", label: "Text message", icon: MessageSquare },
+                      ] as const
+                    ).map(({ id, label, icon: Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        aria-pressed={selected.channel === id}
+                        disabled={busy}
+                        onClick={() => switchChannel(id)}
+                        className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold disabled:opacity-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#183E32] ${
+                          selected.channel === id
+                            ? "bg-[#183E32] text-white"
+                            : "bg-white text-[#183E32] hover:bg-[#EDF0E8]"
+                        }`}
+                      >
+                        <Icon size={15} aria-hidden="true" />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {selected.channel === "text" && (
+                    <p className="mt-2 text-xs text-[#829087]">
+                      Texts send the message only, no subject. Shorten it if you like.
+                    </p>
+                  )}
+                </fieldset>
+              )}
 
               {(isDraft || current.subject) && selected.channel === "email" && (
                 <label className="block text-sm font-semibold">
