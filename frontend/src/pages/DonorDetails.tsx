@@ -4,6 +4,9 @@ import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
+  Download,
+  ExternalLink,
+  FileText,
   HeartHandshake,
   Mail,
   MessageSquare,
@@ -17,10 +20,111 @@ import {
   formatMoney,
   getContactLinks,
   getDonorTimeline,
+  getFunderPacket,
   type ContactLinks,
   type DonorTimeline,
   type TimelineItem,
 } from "../lib/api";
+import { useAuth } from "../auth/AuthProvider";
+
+// Funder packet: gifts, totals by year/program, and the outcomes they funded.
+// Admin and fundraising only (the backend refuses board members).
+function FunderReport({ donorId, donorName }: { donorId: number; donorName: string }) {
+  const [busy, setBusy] = useState<"html" | "csv" | null>(null);
+  const [error, setError] = useState("");
+
+  async function openReport() {
+    // Open the tab now, while we're still inside the click, so pop-up
+    // blockers allow it. We fill it in once the report arrives.
+    const tab = window.open("", "_blank");
+    if (!tab) {
+      setError("Your browser blocked the new tab. Allow pop-ups for this site and try again.");
+      return;
+    }
+    tab.document.title = "Loading report…";
+    tab.document.body.textContent = "Loading funder report…";
+
+    setBusy("html");
+    setError("");
+    try {
+      const { blob } = await getFunderPacket(donorId, "html");
+      const url = URL.createObjectURL(blob);
+      tab.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      tab.close();
+      setError(`Couldn't load the report: ${(err as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadCsv() {
+    setBusy("csv");
+    setError("");
+    try {
+      const { blob, filename } = await getFunderPacket(donorId, "csv");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename ?? `funder-${donorId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(`Couldn't download the CSV: ${(err as Error).message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const buttonClass =
+    "inline-flex items-center gap-2 border border-[#183E32] px-4 py-2 text-sm text-[#183E32] transition-colors hover:bg-[#183E32] hover:text-[#F5F0E6] disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-[#183E32] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]";
+
+  return (
+    <section
+      aria-labelledby="funder-report-heading"
+      className="border border-[#D8DED4] bg-[#FBF9F3] p-6"
+    >
+      <div className="mb-2 flex items-center gap-3">
+        <FileText size={19} className="text-[#52705D]" aria-hidden="true" />
+        <h3 id="funder-report-heading" className="text-sm font-semibold">
+          Funder Report
+        </h3>
+      </div>
+      <p className="mb-4 text-xs text-[#829087]">
+        {donorName}'s giving by year and program, the outcomes it funded, and
+        every gift. Ready to print or save as PDF.
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={openReport}
+          disabled={busy !== null}
+          className={buttonClass}
+        >
+          <ExternalLink size={16} aria-hidden="true" />
+          {busy === "html" ? "Opening…" : "Open report"}
+        </button>
+        <button
+          type="button"
+          onClick={downloadCsv}
+          disabled={busy !== null}
+          className={buttonClass}
+        >
+          <Download size={16} aria-hidden="true" />
+          {busy === "csv" ? "Downloading…" : "Gift history (CSV)"}
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-[#9A3B2E]">{error}</p>
+      )}
+    </section>
+  );
+}
 
 const ICONS = {
   gift: HeartHandshake,
@@ -59,6 +163,9 @@ function TimelineRow({ item, action }: { item: TimelineItem; action?: React.Reac
 export default function DonorDetails() {
   const { role, donorId } = useParams();
   const id = Number(donorId);
+  const auth = useAuth();
+  const canExport =
+    auth.status === "ready" && (auth.role === "admin" || auth.role === "fundraising");
 
   // Results are tagged with the donor id they belong to, so moving to another
   // donor shows "Loading…" instead of the previous donor's data.
@@ -284,6 +391,10 @@ export default function DonorDetails() {
               </ul>
             )}
           </section>
+
+          {canExport && (
+            <FunderReport donorId={donor.id} donorName={donor.display_name} />
+          )}
 
           {/* Contact Information */}
           <section className="border border-[#D8DED4] bg-[#FBF9F3] p-6">

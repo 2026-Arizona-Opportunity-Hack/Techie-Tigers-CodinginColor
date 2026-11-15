@@ -14,10 +14,8 @@ export class ApiError extends Error {
 }
 
 // Calls the FastAPI backend with the signed-in user's Supabase token.
-export async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+// Returns the raw response; throws ApiError on network failure or non-2xx.
+async function apiRequest(path: string, options: RequestInit = {}): Promise<Response> {
   if (!API_URL) {
     throw new Error("VITE_API_URL is not set in frontend/.env.local");
   }
@@ -58,8 +56,26 @@ export async function apiFetch<T>(
     throw new ApiError(res.status, message, detail);
   }
 
+  return res;
+}
+
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await apiRequest(path, options);
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+// For non-JSON responses (HTML reports, CSV downloads).
+export async function apiFetchFile(
+  path: string
+): Promise<{ blob: Blob; filename: string | null }> {
+  const res = await apiRequest(path);
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? null;
+  return { blob: await res.blob(), filename };
 }
 
 // ---- Who am I? ----
@@ -127,6 +143,12 @@ export const getDonorTimeline = (id: number) =>
   apiFetch<DonorTimeline>(`/donors/${id}/timeline`);
 export const getContactLinks = (id: number) =>
   apiFetch<ContactLinks>(`/donors/${id}/contact-links`);
+
+// ---- Funder packet (backend/app/routers/exports.py; admin + fundraising only) ----
+// "html" is a print-ready page; "csv" is the gift history as a spreadsheet.
+// Every fetch is recorded in export_log on the backend.
+export const getFunderPacket = (id: number, format: "html" | "csv") =>
+  apiFetchFile(`/exports/funder-packet/${id}?format=${format}`);
 
 // ---- Imports (backend/app/routers/imports.py) ----
 export type ImportSource = "spreadsheet" | "zeffy" | "benevity";
