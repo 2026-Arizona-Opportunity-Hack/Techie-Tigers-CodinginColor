@@ -150,7 +150,7 @@ On Render, set the same backend variables under the service's Environment tab.
 ## Links
 
 - Live demo: https://frontend-techie-tigers.vercel.app may take up to a minute on first launch
-- Demo video: https://techie-tigers-codingincolor.onrender.com — interactive docs at `/docs` 
+- Demo video: https://youtu.be/xq3e_dZ_tyY — interactive docs at `/docs` 
 - Design / docs: [Architecture decisions](docs/decisions.md) · [Read API](docs/read-api.md)
 
 ## After the hackathon
