@@ -105,9 +105,11 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend
 npm install
-cp .env.example .env.local    # if present; otherwise create it with the 3 values below
+cp .env.example .env.local    # then fill in the 3 values below
 npm run dev
 ```
+What each role sees, how the frontend works, deploying and troubleshooting: [frontend/README.md](frontend/README.md).
+
 ### Environment variables
 
 Backend — `.env` at the repo root:
