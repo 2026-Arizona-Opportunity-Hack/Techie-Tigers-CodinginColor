@@ -1,136 +1,268 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { CalendarClock, CheckCircle2, Lock, Mail, MessageSquare, Phone, Plus, X } from "lucide-react";
 
-import { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import { Mail, Plus, Send } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
+import {
+  draftQuarterlyUpdates,
+  editDraft,
+  formatDate,
+  getDonors,
+  getDonorTimeline,
+  getDraftLinks,
+  getMessages,
+  logOutreach,
+  markSent,
+  skipDraft,
+  type Donor,
+  type MessageSummary,
+} from "../lib/api";
 
-import { mockDonors, donorName } from "../data/mockDonors.ts";
+type Tab = "draft" | "sent";
 
-type MessageStatus = "draft" | "sent";
-
-type Message = {
+// The message body comes from the donor's timeline: the message list endpoint
+// returns summaries only.
+type Detail = {
   id: number;
-  donorId: number;
   subject: string;
   body: string;
-  status: MessageStatus;
+  saved: { subject: string; body: string }; // what the server has, to detect edits
+  error?: string;
 };
 
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    donorId: 1,
-    subject: "Your impact this fall",
-    body: "Hi Maria,\n\nThank you for supporting Coding in Color.\n\nBest,\nCoding in Color",
-    status: "draft",
-  },
-  {
-    id: 2,
-    donorId: 3,
-    subject: "Thank you for your support",
-    body: "Hi James,\n\nThank you for your generous support!\n\nBest,\nCoding in Color",
-    status: "draft",
-  },
-  {
-    id: 3,
-    donorId: 2,
-    subject: "AI Academy program update",
-    body: "Hello,\n\nThank you for supporting our programs.\n\nBest,\nCoding in Color",
-    status: "sent",
-  },
-];
+const kindLabel = (m: MessageSummary) =>
+  `${m.kind.replace(/_/g, " ")}${m.channel ? ` · ${m.channel.replace("_", " ")}` : ""}`;
+
+const primaryButton =
+  "inline-flex items-center gap-2 bg-[#183E32] px-5 py-3 text-sm font-semibold text-white hover:bg-[#285745] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]";
+const secondaryButton =
+  "inline-flex items-center gap-2 border border-[#183E32] px-5 py-3 text-sm font-semibold text-[#183E32] hover:bg-[#EDF0E8] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]";
 
 export default function OutreachPage() {
   const { role } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const visibleDonors =
-    role === "board"
-      ? mockDonors.filter(
-          (donor) => donor.owner === "Demo Board Member"
-        )
-      : mockDonors;
+  const [tab, setTab] = useState<Tab>("draft");
+  const [version, setVersion] = useState(0);
+  const [list, setList] = useState<{ key: string; messages?: MessageSummary[]; error?: string }>();
+  const listKey = `${tab}-${version}`;
 
-  const donorIds = new Set(visibleDonors.map((donor) => donor.id));
-
-  const [messages, setMessages] = useState(initialMessages);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-
-  const initialDonorId = Number(searchParams.get("donorId"));
-  const defaultDonorId = donorIds.has(initialDonorId)
-    ? initialDonorId
-    : (visibleDonors[0]?.id ?? 0);
-
-  const [newDonorId, setNewDonorId] = useState(defaultDonorId);
-  const [showForm, setShowForm] = useState(false);
-
-  const accessibleMessages = messages.filter((message) =>
-    donorIds.has(message.donorId)
+  // ?draft=12 opens that draft (the Follow-ups page links here).
+  const [selectedId, setSelectedId] = useState<number | null>(
+    Number(searchParams.get("draft")) || null
   );
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [awaitingSend, setAwaitingSend] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [actionError, setActionError] = useState("");
 
-  const selected = accessibleMessages.find(
-    (message) => message.id === selectedId
-  );
+  const auth = useAuth();
+  const me = auth.status === "ready" ? auth.me : null;
 
-  const selectedDonor = selected
-    ? visibleDonors.find((donor) => donor.id === selected.donorId)
-    : undefined;
+  const messages = list?.messages ?? [];
+  const selected = messages.find((m) => m.id === selectedId);
+  const current = detail && detail.id === selectedId ? detail : null;
+  const isDraft = selected?.status === "draft";
+  // The database only lets you edit or send a draft the system wrote or you
+  // started (admins excepted), so nobody can take over a teammate's message.
+  const draftOwnedByOther =
+    isDraft && !!selected?.user_id && selected.user_id !== me?.id && me?.role !== "admin";
+  const edited =
+    !!current &&
+    (current.subject !== current.saved.subject || current.body !== current.saved.body);
 
-  function createDraft() {
-    const donor = visibleDonors.find((d) => d.id === newDonorId);
-    if (!donor) return;
-
-    const greeting =
-      donor.first_name || donor.organization_name || "there";
-
-    const draft: Message = {
-      id: Date.now(),
-      donorId: donor.id,
-      subject: "Thank you for supporting Coding in Color",
-      body: `Hi ${greeting},\n\nThank you for your support of Coding in Color.\n\nBest,\nCoding in Color`,
-      status: "draft",
+  // Load the message list for the current tab.
+  useEffect(() => {
+    let cancelled = false;
+    getMessages(tab)
+      .then((rows) => !cancelled && setList({ key: listKey, messages: rows }))
+      .catch((err: Error) => !cancelled && setList({ key: listKey, error: err.message }));
+    return () => {
+      cancelled = true;
     };
+  }, [tab, listKey]);
 
-    setMessages((previous) => [draft, ...previous]);
-    setSelectedId(draft.id);
-    setShowForm(false);
+  // Load the selected message's full text.
+  const selectedDonorId = selected?.donor_id;
+  useEffect(() => {
+    if (!selectedId || !selectedDonorId) return;
+    let cancelled = false;
+    getDonorTimeline(selectedDonorId)
+      .then((t) => {
+        const item = [...t.open, ...t.history].find(
+          (i) => i.type === "message" && i.id === selectedId
+        );
+        const subject = item?.subject ?? "";
+        const body = item?.body ?? "";
+        if (!cancelled)
+          setDetail({ id: selectedId, subject, body, saved: { subject, body } });
+      })
+      .catch(
+        (err: Error) =>
+          !cancelled &&
+          setDetail({ id: selectedId, subject: "", body: "", saved: { subject: "", body: "" }, error: err.message })
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, selectedDonorId]);
+
+  function select(id: number | null) {
+    setSelectedId(id);
+    setAwaitingSend(false);
+    setActionError("");
+    setNotice("");
+    setSearchParams(id && tab === "draft" ? { draft: String(id) } : {}, { replace: true });
   }
 
-  function updateDraft(changes: Partial<Message>) {
-    if (!selected || selected.status !== "draft") return;
-
-    setMessages((previous) =>
-      previous.map((message) =>
-        message.id === selected.id
-          ? { ...message, ...changes }
-          : message
-      )
-    );
+  function switchTab(next: Tab) {
+    setTab(next);
+    select(null);
   }
 
-  function markAsSent() {
-    if (!selected || selected.status !== "draft") return;
+  const reload = () => setVersion((v) => v + 1);
 
-    const confirmed = window.confirm(
-      "Did you actually send this email? This only updates the demo status."
-    );
-    if (!confirmed) return;
-
-    setMessages((previous) =>
-      previous.map((message) =>
-        message.id === selected.id
-          ? { ...message, status: "sent" }
-          : message
-      )
-    );
+  async function act(work: () => Promise<void>) {
+    setBusy(true);
+    setActionError("");
+    try {
+      await work();
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const mailtoHref =
-    selected && selectedDonor
-      ? `mailto:${selectedDonor.email}?${new URLSearchParams({
-          subject: selected.subject,
-          body: selected.body,
-        }).toString()}`
-      : "#";
+  const save = () =>
+    act(async () => {
+      if (!current || !selected) return;
+      await editDraft(selected.id, { subject: current.subject || null, body: current.body });
+      setDetail({ ...current, saved: { subject: current.subject, body: current.body } });
+      reload();
+    });
+
+  // Opens the sender's own Gmail or Messages with the draft filled in.
+  // The backend signs it with their name. Nothing is sent from here.
+  const openToSend = () => {
+    if (!selected || !current) return;
+    const isEmail = selected.channel === "email";
+    // Open the tab now, while we still have the click; browsers block it after an await.
+    const tabWindow = isEmail ? window.open("about:blank", "_blank") : null;
+    act(async () => {
+      try {
+        if (edited) {
+          await editDraft(selected.id, { subject: current.subject || null, body: current.body });
+          setDetail({ ...current, saved: { subject: current.subject, body: current.body } });
+        }
+        const links = await getDraftLinks(selected.id);
+        const url = isEmail ? links.gmail ?? links.mailto : links.sms;
+        if (!url) throw new Error(`This donor has no ${isEmail ? "email" : "phone number"} on file.`);
+        if (tabWindow) {
+          tabWindow.opener = null;
+          tabWindow.location.href = url;
+        } else {
+          window.location.href = url;
+        }
+        setAwaitingSend(true);
+      } catch (err) {
+        tabWindow?.close();
+        throw err;
+      }
+    });
+  };
+
+  const confirmSent = () => {
+    if (!selected) return;
+    if (!window.confirm("Mark as sent only after you've pressed Send in Gmail or Messages. Mark it sent?"))
+      return;
+    act(async () => {
+      await markSent(selected.id);
+      setNotice(`Marked sent. It's now on ${selected.donor_name}'s timeline with your name.`);
+      select(null);
+      reload();
+    });
+  };
+
+  const skip = () => {
+    if (!selected) return;
+    if (!window.confirm(`Dismiss this draft for ${selected.donor_name}? It won't be sent.`)) return;
+    act(async () => {
+      await skipDraft(selected.id);
+      setNotice("Draft dismissed.");
+      select(null);
+      reload();
+    });
+  };
+
+  // ---- Quarterly updates (admin) ----
+  const [drafting, setDrafting] = useState(false);
+  async function runQuarterly() {
+    if (!window.confirm("Draft a quarterly update for every active donor nobody has contacted in 90 days? Nothing is sent; each owner reviews and sends their own."))
+      return;
+    setDrafting(true);
+    setActionError("");
+    try {
+      const r = await draftQuarterlyUpdates();
+      setNotice(
+        `${r.drafts_created} quarterly update${r.drafts_created === 1 ? "" : "s"} drafted` +
+          (r.skipped_no_email_or_phone
+            ? `; ${r.skipped_no_email_or_phone} donor(s) skipped with no email or phone.`
+            : ".") +
+          " Each board member sees theirs under Drafts to review."
+      );
+      if (tab === "draft") reload();
+      else switchTab("draft");
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setDrafting(false);
+    }
+  }
+
+  // ---- "Log a conversation" dialog ----
+  const [showLog, setShowLog] = useState(false);
+  const [donors, setDonors] = useState<Donor[] | null>(null);
+  const [logForm, setLogForm] = useState({ donorId: "", channel: "call", body: "" });
+  const [logError, setLogError] = useState("");
+  const [logging, setLogging] = useState(false);
+
+  function openLog() {
+    setShowLog(true);
+    setLogError("");
+    if (!donors)
+      getDonors()
+        .then(setDonors)
+        .catch((err: Error) => setLogError(`Couldn't load donors: ${err.message}`));
+  }
+
+  async function submitLog(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!logForm.donorId || !logForm.body.trim()) return;
+    setLogging(true);
+    setLogError("");
+    try {
+      await logOutreach({
+        donor_id: Number(logForm.donorId),
+        channel: logForm.channel as "call" | "in_person" | "text" | "email",
+        kind: "follow_up",
+        body: logForm.body.trim(),
+      });
+      const name = donors?.find((d) => d.id === Number(logForm.donorId))?.display_name;
+      setShowLog(false);
+      setLogForm({ donorId: "", channel: "call", body: "" });
+      setNotice(`Logged. It's on ${name ?? "the donor"}'s timeline.`);
+      if (tab === "sent") reload();
+      else switchTab("sent");
+    } catch (err) {
+      setLogError((err as Error).message);
+    } finally {
+      setLogging(false);
+    }
+  }
+
+  const listLoading = list?.key !== listKey && !list?.messages;
 
   return (
     <div className="space-y-8">
@@ -139,216 +271,324 @@ export default function OutreachPage() {
           <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
             Donor relationships / Communications
           </p>
-          <h2 className="mt-3 font-display text-5xl text-[#183E32]">
-            Stay in touch.
-          </h2>
+          <h2 className="mt-3 font-display text-5xl text-[#183E32]">Stay in touch.</h2>
           <p className="mt-3 text-sm text-[#788279]">
-            Review every message before it goes out.
+            The system drafts. You review, send it from your own email or phone, then mark it
+            sent.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setNewDonorId(defaultDonorId);
-            setShowForm(true);
-          }}
-          className="flex items-center gap-2 bg-[#183E32] px-5 py-3 text-sm font-semibold text-white hover:bg-[#285745]"
-        >
-          <Plus size={18} />
-          New message
-        </button>
+        <div className="flex flex-wrap gap-3">
+          {me?.role === "admin" && (
+            <button type="button" onClick={runQuarterly} disabled={drafting} className={secondaryButton}>
+              <CalendarClock size={18} aria-hidden="true" />
+              {drafting ? "Drafting…" : "Draft quarterly updates"}
+            </button>
+          )}
+          <button type="button" onClick={openLog} className={primaryButton}>
+            <Plus size={18} aria-hidden="true" />
+            Log a conversation
+          </button>
+        </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Drafts",
-            value: accessibleMessages.filter(
-              (message) => message.status === "draft"
-            ).length,
-          },
-          {
-            label: "Sent",
-            value: accessibleMessages.filter(
-              (message) => message.status === "sent"
-            ).length,
-          },
-          { label: "Total messages", value: accessibleMessages.length },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="border border-[#D8DED4] bg-[#FBF9F3] p-6"
-          >
-            <p className="text-xs text-[#829087]">{stat.label}</p>
-            <p className="mt-3 font-display text-4xl text-[#183E32]">
-              {stat.value}
-            </p>
-          </div>
-        ))}
-      </div>
+      {actionError && !selected && (
+        <p role="alert" className="text-sm text-[#9A3B2E]">{actionError}</p>
+      )}
 
-      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
+      {notice && (
+        <p role="status" className="flex items-center gap-2 border border-[#A9C3AE] bg-[#EEF4EE] p-4 text-sm text-[#2F5A3C]">
+          <CheckCircle2 size={16} aria-hidden="true" /> {notice}
+        </p>
+      )}
+
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
+        {/* Message list */}
         <div className="border border-[#D8DED4] bg-[#FBF9F3]">
-          <div className="border-b border-[#D8DED4] p-5 text-sm font-semibold">
-            Messages
-          </div>
-
-          {accessibleMessages.map((message) => {
-            const donor = visibleDonors.find(
-              (d) => d.id === message.donorId
-            );
-
-            return (
+          <div role="group" aria-label="Show messages" className="flex border-b border-[#D8DED4]">
+            {(["draft", "sent"] as Tab[]).map((t) => (
               <button
+                key={t}
                 type="button"
-                key={message.id}
-                onClick={() => setSelectedId(message.id)}
-                className={`w-full border-b border-[#E0E4DB] p-5 text-left hover:bg-[#EDF0E8] ${
-                  selectedId === message.id ? "bg-[#E5EBE1]" : ""
+                aria-pressed={tab === t}
+                onClick={() => switchTab(t)}
+                className={`flex-1 p-4 text-sm font-semibold ${
+                  tab === t ? "bg-[#E5EBE1] text-[#183E32]" : "text-[#6F8172] hover:bg-[#EDF0E8]"
                 }`}
               >
-                <p className="text-sm font-semibold text-[#242A26]">
-                  {message.subject}
-                </p>
-                <p className="mt-2 text-xs text-[#829087]">
-                  {donor ? donorName(donor) : "Unknown donor"} ·{" "}
-                  {message.status}
-                </p>
+                {t === "draft" ? "Drafts to review" : "Sent history"}
               </button>
-            );
-          })}
+            ))}
+          </div>
+
+          {list?.error && !list.messages ? (
+            <p role="alert" className="p-5 text-sm text-[#9A3B2E]">
+              Couldn't load messages: {list.error}
+            </p>
+          ) : listLoading ? (
+            <p role="status" className="p-5 text-sm text-[#829087]">Loading…</p>
+          ) : messages.length === 0 ? (
+            <p className="p-5 text-sm text-[#829087]">
+              {tab === "draft"
+                ? "No drafts waiting. New gifts and the quarterly job create them."
+                : "Nothing sent yet."}
+            </p>
+          ) : (
+            <ul>
+              {messages.map((m) => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => select(m.id)}
+                    aria-current={selectedId === m.id}
+                    className={`w-full border-b border-[#E0E4DB] p-5 text-left hover:bg-[#EDF0E8] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#183E32] ${
+                      selectedId === m.id ? "bg-[#E5EBE1]" : ""
+                    }`}
+                  >
+                    <p className="text-sm font-semibold text-[#242A26]">{m.donor_name}</p>
+                    <p className="mt-1 text-xs text-[#829087] first-letter:uppercase">
+                      {kindLabel(m)} ·{" "}
+                      {m.status === "sent"
+                        ? `${m.sent_by ?? "Someone"}, ${formatDate(m.sent_at)}`
+                        : formatDate(m.created_at)}
+                    </p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
+        {/* Selected message */}
         <div className="min-h-[400px] border border-[#D8DED4] bg-[#FBF9F3] p-6">
           {!selected ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              <Mail size={30} className="text-[#52705D]" />
-              <h3 className="font-display text-3xl text-[#183E32]">
-                Select a message.
-              </h3>
+              <Mail size={30} className="text-[#52705D]" aria-hidden="true" />
+              <h3 className="font-display text-3xl text-[#183E32]">Select a message.</h3>
               <p className="text-sm text-[#829087]">
-                Choose a message on the left to review or edit it.
+                Choose a message on the left to review it.
               </p>
             </div>
+          ) : !current ? (
+            <p role="status" className="text-sm text-[#829087]">Loading message…</p>
+          ) : current.error ? (
+            <p role="alert" className="text-sm text-[#9A3B2E]">
+              Couldn't load this message: {current.error}
+            </p>
           ) : (
             <div className="space-y-5">
-              <h3 className="font-display text-3xl text-[#183E32]">
-                {selected.status === "draft"
-                  ? "Review draft."
-                  : "Sent message."}
-              </h3>
+              <div>
+                <h3 className="font-display text-3xl text-[#183E32]">
+                  {isDraft ? "Review draft." : "Sent message."}
+                </h3>
+                <p className="mt-2 text-sm text-[#657365]">
+                  To{" "}
+                  <Link
+                    to={`/${role}/donors/${selected.donor_id}`}
+                    className="underline decoration-[#C8D2C7] underline-offset-2 hover:text-[#183E32]"
+                  >
+                    {selected.donor_name}
+                  </Link>{" "}
+                  by {selected.channel?.replace("_", " ") ?? "message"}
+                  {!isDraft && ` · sent by ${selected.sent_by ?? "someone"} on ${formatDate(selected.sent_at)}`}
+                </p>
+              </div>
 
-              <p className="text-sm text-[#657365]">
-                To: {selectedDonor?.email}
-              </p>
+              {(isDraft || current.subject) && selected.channel === "email" && (
+                <label className="block text-sm font-semibold">
+                  Subject
+                  <input
+                    value={current.subject}
+                    readOnly={!isDraft || draftOwnedByOther}
+                    maxLength={200}
+                    onChange={(e) => setDetail({ ...current, subject: e.target.value })}
+                    className="mt-2 w-full border border-[#C8D2C7] bg-white p-3 font-normal outline-none focus:border-[#183E32] read-only:bg-transparent"
+                  />
+                </label>
+              )}
 
               <label className="block text-sm font-semibold">
-                Subject
-                <input
-                  value={selected.subject}
-                  disabled={selected.status === "sent"}
-                  onChange={(event) =>
-                    updateDraft({ subject: event.target.value })
-                  }
-                  className="mt-2 w-full border border-[#C8D2C7] bg-white p-3 font-normal outline-none"
-                />
-              </label>
-
-              <label className="block text-sm font-semibold">
-                Message
+                {isDraft ? "Message" : "What was sent"}
                 <textarea
                   rows={11}
-                  value={selected.body}
-                  disabled={selected.status === "sent"}
-                  onChange={(event) =>
-                    updateDraft({ body: event.target.value })
-                  }
-                  className="mt-2 w-full resize-y border border-[#C8D2C7] bg-white p-4 font-normal leading-7 outline-none"
+                  value={current.body}
+                  readOnly={!isDraft || draftOwnedByOther}
+                  maxLength={5000}
+                  onChange={(e) => setDetail({ ...current, body: e.target.value })}
+                  className="mt-2 w-full resize-y border border-[#C8D2C7] bg-white p-4 font-normal leading-7 outline-none focus:border-[#183E32] read-only:bg-transparent"
                 />
               </label>
+              {isDraft && (
+                <p className="text-xs text-[#829087]">
+                  "[Your name]" is replaced with your name when you open it to send.
+                </p>
+              )}
 
-              {selected.status === "draft" && (
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href={mailtoHref}
-                    className="flex items-center gap-2 bg-[#183E32] px-5 py-3 text-sm font-semibold text-white"
-                  >
-                    <Send size={17} />
-                    Open email app
-                  </a>
+              {actionError && (
+                <p role="alert" className="text-sm text-[#9A3B2E]">{actionError}</p>
+              )}
 
-                  <button
-                    type="button"
-                    onClick={markAsSent}
-                    className="border border-[#183E32] px-5 py-3 text-sm font-semibold text-[#183E32]"
-                  >
-                    Confirm sent
-                  </button>
-                </div>
+              {draftOwnedByOther && (
+                <p role="note" className="flex items-start gap-2 border border-[#C8D2C7] bg-[#EDF0E8] p-4 text-sm text-[#42674C]">
+                  <Lock size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+                  {selected.sent_by ?? "Someone else"} started this draft, so only they or an
+                  admin can edit or send it. You can still log your own conversation with this
+                  donor.
+                </p>
+              )}
+
+              {isDraft && !draftOwnedByOther && (
+                <>
+                  {awaitingSend && (
+                    <div role="status" className="border border-[#D8B77D] bg-[#FBF5E8] p-4 text-sm text-[#6B5428]">
+                      Pressed Send in {selected.channel === "email" ? "Gmail" : "Messages"}? Mark it
+                      sent so it's recorded on the timeline.
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-3">
+                    <button type="button" onClick={openToSend} disabled={busy} className={primaryButton}>
+                      {selected.channel === "email" ? (
+                        <Mail size={17} aria-hidden="true" />
+                      ) : (
+                        <MessageSquare size={17} aria-hidden="true" />
+                      )}
+                      {selected.channel === "email" ? "Open in Gmail" : "Open in Messages"}
+                    </button>
+                    <button type="button" onClick={confirmSent} disabled={busy} className={secondaryButton}>
+                      <CheckCircle2 size={17} aria-hidden="true" />
+                      Mark as sent
+                    </button>
+                    {edited && (
+                      <button type="button" onClick={save} disabled={busy} className={secondaryButton}>
+                        Save changes
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={skip}
+                      disabled={busy}
+                      className="px-3 py-3 text-sm text-[#7C887C] underline underline-offset-2 hover:text-[#9A3B2E] disabled:opacity-50"
+                    >
+                      Dismiss draft
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      {/* Log a conversation */}
+      {showLog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onKeyDown={(e) => e.key === "Escape" && setShowLog(false)}
+        >
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="new-message-title"
-            className="w-full max-w-md bg-[#F5F0E6] p-8"
+            aria-labelledby="log-title"
+            className="w-full max-w-lg bg-[#F5F0E6] p-8"
           >
-            <h3
-              id="new-message-title"
-              className="font-display text-4xl text-[#183E32]"
-            >
-              New message.
-            </h3>
-
-            <label className="mt-6 block text-sm font-semibold">
-              Donor
-              <select
-                value={newDonorId}
-                onChange={(event) =>
-                  setNewDonorId(Number(event.target.value))
-                }
-                className="mt-2 w-full border border-[#C8D2C7] bg-white p-3 font-normal"
-              >
-                {visibleDonors.map((donor) => (
-                  <option key={donor.id} value={donor.id}>
-                    {donorName(donor)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="mt-8 flex gap-3">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 id="log-title" className="font-display text-4xl text-[#183E32]">
+                Log a conversation.
+              </h3>
               <button
                 type="button"
-                onClick={createDraft}
-                className="bg-[#183E32] px-5 py-3 text-sm font-semibold text-white"
+                onClick={() => setShowLog(false)}
+                aria-label="Close"
+                className="cursor-pointer"
               >
-                Create draft
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="border border-[#C8D2C7] px-5 py-3 text-sm"
-              >
-                Cancel
+                <X size={22} aria-hidden="true" />
               </button>
             </div>
+            <p className="mb-6 text-sm text-[#788279]">
+              For a call, text, email or meeting that already happened, so the next person
+              knows.
+            </p>
+
+            <form onSubmit={submitLog} className="space-y-5">
+              <label className="block text-xs font-semibold">
+                Donor
+                <select
+                  required
+                  autoFocus
+                  disabled={!donors}
+                  value={logForm.donorId}
+                  onChange={(e) => setLogForm({ ...logForm, donorId: e.target.value })}
+                  className="mt-2 w-full border border-[#C8D2C7] bg-white p-3 text-sm font-normal"
+                >
+                  <option value="">{donors ? "Choose a donor…" : "Loading donors…"}</option>
+                  {donors?.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.display_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <fieldset>
+                <legend className="mb-2 text-xs font-semibold">How</legend>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {[
+                    { id: "call", label: "Call", icon: Phone },
+                    { id: "in_person", label: "In person", icon: CheckCircle2 },
+                    { id: "text", label: "Text", icon: MessageSquare },
+                    { id: "email", label: "Email", icon: Mail },
+                  ].map(({ id, label, icon: Icon }) => (
+                    <label
+                      key={id}
+                      className={`flex cursor-pointer items-center justify-center gap-2 border p-3 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[#183E32] ${
+                        logForm.channel === id
+                          ? "border-[#183E32] bg-[#EDF0E8]"
+                          : "border-[#C8D2C7] bg-white"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="channel"
+                        value={id}
+                        checked={logForm.channel === id}
+                        onChange={() => setLogForm({ ...logForm, channel: id })}
+                        className="sr-only"
+                      />
+                      <Icon size={15} aria-hidden="true" />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label className="block text-xs font-semibold">
+                What happened
+                <textarea
+                  required
+                  rows={4}
+                  maxLength={2000}
+                  value={logForm.body}
+                  onChange={(e) => setLogForm({ ...logForm, body: e.target.value })}
+                  placeholder="e.g. Coffee chat. Not ready to give yet, wants to see a class."
+                  className="mt-2 w-full border border-[#C8D2C7] bg-white p-3 text-sm font-normal"
+                />
+              </label>
+
+              {logError && (
+                <p role="alert" className="text-sm text-[#9A3B2E]">{logError}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={logging || !donors}
+                className={`${primaryButton} w-full justify-center py-4`}
+              >
+                {logging ? "Saving…" : "Save to timeline"}
+              </button>
+            </form>
           </div>
         </div>
       )}
-
-      <p className="text-xs text-[#829087]">
-        Demo mode: message changes reset when the page reloads.
-        No emails are sent automatically.
-      </p>
     </div>
   );
 }

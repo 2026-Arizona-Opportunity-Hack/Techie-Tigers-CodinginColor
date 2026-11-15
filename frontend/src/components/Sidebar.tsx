@@ -28,6 +28,7 @@ export const roleMenus = {
     { label: "All Donors", path: "donors", icon: Users },
     { label: "Donations", path: "donations", icon: HeartHandshake },
     { label: "Retention", path: "retention", icon: ChartNoAxesCombined },
+    { label: "Outreach", path: "outreach", icon: Mail },
     { label: "CSV Imports", path: "imports", icon: Upload },
     { label: "Duplicate Review", path: "duplicates", icon: CopyCheck },
     { label: "Funder Reports", path: "reports", icon: FileText },

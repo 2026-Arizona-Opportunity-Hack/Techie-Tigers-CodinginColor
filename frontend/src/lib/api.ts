@@ -212,3 +212,65 @@ export const createNextStep = (step: {
 
 export const completeNextStep = (id: number) =>
   apiFetch(`/next-steps/${id}/done`, { method: "POST" });
+
+// ---- Outreach (backend/app/routers/communications.py) ----
+// Every message is drafted by the system or a person, opened in the sender's
+// own Gmail or Messages app, sent by hand, and then marked sent here.
+export type MessageStatus = "draft" | "sent" | "skipped";
+
+export type MessageSummary = {
+  id: number;
+  donor_id: number;
+  donor_name: string;
+  user_id: string | null; // null = system draft nobody has claimed yet
+  sent_by: string | null;
+  channel: "email" | "text" | "call" | "in_person" | null;
+  kind: string;
+  subject: string | null;
+  status: MessageStatus;
+  sent_at: string | null;
+  created_at: string;
+  ai_generated: boolean;
+};
+
+export const getMessages = (status: MessageStatus) =>
+  apiFetch<MessageSummary[]>(`/communications?status=${status}&limit=200`);
+
+export const editDraft = (
+  id: number,
+  changes: { subject?: string | null; body?: string; channel?: "email" | "text" }
+) => apiFetch(`/communications/${id}`, { method: "PATCH", body: JSON.stringify(changes) });
+
+// Gmail / mailto / sms links with the draft filled in and the sender's name signed.
+export const getDraftLinks = (id: number) =>
+  apiFetch<ContactLinks>(`/communications/${id}/links`);
+
+export const markSent = (id: number) =>
+  apiFetch(`/communications/${id}/mark-sent`, { method: "POST" });
+
+export const skipDraft = (id: number) =>
+  apiFetch(`/communications/${id}/skip`, { method: "POST" });
+
+// Record a call, text, email or meeting that already happened.
+export const logOutreach = (entry: {
+  donor_id: number;
+  channel: "email" | "text" | "call" | "in_person";
+  kind?: string;
+  subject?: string;
+  body?: string;
+}) => apiFetch("/communications/log", { method: "POST", body: JSON.stringify(entry) });
+
+// Draft a thank-you for one gift. The draft belongs to whoever asks for it.
+export const draftThankYou = (giftId: number) =>
+  apiFetch<{ id: number }>("/communications/thank-you", {
+    method: "POST",
+    body: JSON.stringify({ gift_id: giftId }),
+  });
+
+// Admin only: draft a quarterly update for every active donor nobody has
+// contacted in 90 days. Safe to run twice; donors with a pending one are skipped.
+export const draftQuarterlyUpdates = () =>
+  apiFetch<{ drafts_created: number; skipped_no_email_or_phone: number }>(
+    "/jobs/quarterly-drafts",
+    { method: "POST" }
+  );
