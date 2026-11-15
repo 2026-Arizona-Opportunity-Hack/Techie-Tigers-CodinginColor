@@ -1,17 +1,20 @@
+import importlib
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import donors, imports, me
+from .routers import donors, me
 
 app = FastAPI(title="Coding in Color — Donor & Funder Platform API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_settings().cors_origins,
+    allow_origins=get_settings().cors_origins,  # a list, exact origins, no trailing slash
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 
@@ -22,4 +25,3 @@ def health():
 
 app.include_router(me.router)
 app.include_router(donors.router)
-app.include_router(imports.router)

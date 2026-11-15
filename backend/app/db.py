@@ -1,28 +1,31 @@
-"""Supabase clients.
+"""Supabase connections.
 
-user_client(token): runs as the logged-in user, so Postgres RLS decides what
-they can see. Use this for every user-facing request.
-
-service_client(): runs as the service role and BYPASSES RLS. Only use it for
-server-side work the schema expects to run that way (CSV imports, AI drafting,
-the API-key dashboard route). Never return its results unfiltered to a user.
+service_client()  bypasses RLS. Only for imports, AI drafting, the API-key route,
+                  and export_log. Check the caller's role in Python before using it.
+user_client(token) acts AS the logged-in user, so RLS applies. Use for everything else.
 """
 
+import os
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from supabase import Client, create_client
 
-from .config import get_settings
+load_dotenv()
 
-
-def user_client(access_token: str) -> Client:
-    s = get_settings()
-    client = create_client(s.supabase_url, s.supabase_anon_key)
-    client.postgrest.auth(access_token)
-    return client
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]  # publishable key
+SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]  # secret key
 
 
 @lru_cache
 def service_client() -> Client:
-    s = get_settings()
-    return create_client(s.supabase_url, s.supabase_service_role_key)
+    """One shared client for the whole app (built on first use, then reused)."""
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+
+def user_client(access_token: str) -> Client:
+    """A new client per request, carrying the user's token so RLS applies."""
+    client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+    client.postgrest.auth(access_token)
+    return client
