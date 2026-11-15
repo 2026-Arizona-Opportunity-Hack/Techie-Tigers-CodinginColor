@@ -4,10 +4,12 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export class ApiError extends Error {
   status: number;
+  detail?: unknown; // the backend's full error body, when it sends more than a message
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, detail?: unknown) {
     super(message);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -42,13 +44,18 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
+    let detail: unknown;
     try {
       const body = await res.json();
-      if (typeof body.detail === "string") message = body.detail;
+      detail = body.detail;
+      if (typeof detail === "string") message = detail;
+      // Some endpoints send { message, ...extra } so the UI can show more.
+      else if (detail && typeof (detail as { message?: unknown }).message === "string")
+        message = (detail as { message: string }).message;
     } catch {
       // response wasn't JSON; keep the generic message
     }
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, message, detail);
   }
 
   if (res.status === 204) return undefined as T;
@@ -120,6 +127,31 @@ export const getDonorTimeline = (id: number) =>
   apiFetch<DonorTimeline>(`/donors/${id}/timeline`);
 export const getContactLinks = (id: number) =>
   apiFetch<ContactLinks>(`/donors/${id}/contact-links`);
+
+// ---- Imports (backend/app/routers/imports.py) ----
+export type ImportSource = "spreadsheet" | "zeffy" | "benevity";
+
+export type ImportResult = {
+  source: ImportSource;
+  filename: string;
+  dry_run: boolean;
+  columns_matched: Record<string, string>; // our field -> header in the file
+  columns_ignored: string[];
+  summary: Record<string, number>; // e.g. rows_read, donors_to_create, gifts_to_create
+  skipped: { line: number; reason: string }[]; // first 100
+  warnings: string[];
+  saved?: Record<string, number>; // only on a real import
+};
+
+// dryRun: preview what would happen; nothing is saved.
+export function importFile(source: ImportSource, file: File, dryRun: boolean) {
+  const body = new FormData();
+  body.append("file", file);
+  return apiFetch<ImportResult>(
+    `/imports/${source}${dryRun ? "?dry_run=true" : ""}`,
+    { method: "POST", body }
+  );
+}
 
 // ---- Display helpers ----
 export function formatMoney(amount: number): string {

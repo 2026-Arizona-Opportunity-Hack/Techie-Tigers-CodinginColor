@@ -15,6 +15,7 @@ import DashboardPage from "./pages/DashboardPage";
 import DonorsPage from "./pages/DonorsPage.tsx";
 import DonorDetails from "./pages/DonorDetails";
 import FollowUpsPage from "./pages/FollowUpsPage";
+import ImportsPage from "./pages/ImportsPage";
 
 export default function App() {
   return (
@@ -64,6 +65,12 @@ export default function App() {
           <Route
             path="outreach"
             element={<OutreachPage />} 
+          />
+
+          {/* CSV / Excel imports (admin and fundraising) */}
+          <Route
+            path="imports"
+            element={<ImportsPage />}
           />
 
           {/* Other Dashboard Sections */}
