@@ -272,14 +272,19 @@ export default function OverviewPage() {
 
           {/* Shortcuts */}
           <nav aria-label="Shortcuts" className="flex flex-wrap gap-3">
-            {(isStaff
+            {(me?.role === "admin"
               ? [
                   { label: "All donors", to: "donors" },
                   { label: "Retention", to: "retention" },
                   { label: "Outreach", to: "outreach" },
                   { label: "Import donors", to: "imports" },
                 ]
-              : [
+              : me?.role === "fundraising"
+                ? [
+                    { label: "All donors", to: "donors" },
+                    { label: "Retention", to: "retention" },
+                  ]
+                : [
                   { label: "My donors", to: "donors" },
                   { label: "Follow-ups", to: "followups" },
                   { label: "Outreach", to: "outreach" },
