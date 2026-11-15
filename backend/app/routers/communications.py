@@ -8,6 +8,7 @@ from ..common import user_names, donor_display_name, get_donor_or_404
 from ..db import service_client
 from ..templates import thank_you, contact_links, quarterly_update
 from ..ai import AIUnavailable, draft_update
+from .. import ratelimit
 
 
 router = APIRouter(prefix="/communications", tags=["communications"])
@@ -153,6 +154,8 @@ def draft_ai_update(body: AIUpdateIn, user: CurrentUser = Depends(can_send)):
     the programs they funded. Saved as a draft (ai_generated = true); a person
     reviews, edits and sends it. If AI is off or fails, the quarterly template is
     used instead and `ai_fallback` says why."""
+    # Each call can hit the paid AI service, so cap it per user.
+    ratelimit.check(user.id, "ai-update", limit=10, per_seconds=60)
     d = get_donor_or_404(user.db, body.donor_id,
                          "id, first_name, organization_name, email, phone, active")
     if not d["active"]:
