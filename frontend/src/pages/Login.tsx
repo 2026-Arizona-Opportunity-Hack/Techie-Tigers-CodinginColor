@@ -1,37 +1,70 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Asterisk, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 export default function Login() {
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
 
-  function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function handleLogin(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
+
     setError("");
+    setSuccess("");
 
     if (!email.trim() || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
-    // Authentication will be connected to Supabase later.
-    // Do not navigate until the user's role is verified.
-    setError("Sign-in is not connected yet.");
+    setLoading(true);
+
+    try {
+      const { data, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (!data.session || !data.user) {
+        throw new Error("Unable to establish a session.");
+      }
+
+      // Login succeeded!
+      // We'll navigate to the correct dashboard once
+      // the backend provides the user's verified role.
+      setSuccess(
+        "Signed in successfully! Dashboard access " +
+        "will be connected next."
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <main className="min-h-screen bg-[#F5F0E6] text-[#242A26]">
-
       {/* TOP LEFT BRAND */}
       <header className="absolute left-6 top-6 sm:left-12 sm:top-10">
         <div className="flex items-center gap-3">
-
           <div className="flex h-10 w-10 items-center justify-center bg-[#183E32] text-[#F5F0E6]">
             <Asterisk size={26} strokeWidth={1.5} />
           </div>
@@ -44,9 +77,7 @@ export default function Login() {
 
       {/* LOGIN CONTENT */}
       <section className="flex min-h-screen items-center justify-center px-6 py-28">
-
         <div className="w-full max-w-[400px]">
-
           <div className="mb-10">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7B8D80]">
               Member access
@@ -62,7 +93,6 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-7">
-
             {/* EMAIL */}
             <div>
               <label
@@ -80,7 +110,8 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@codingincolor.net"
-                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32]"
+                disabled={loading}
+                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
               />
             </div>
 
@@ -102,7 +133,8 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32]"
+                  disabled={loading}
+                  className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
                 />
 
                 <button
@@ -129,12 +161,20 @@ export default function Login() {
               </p>
             )}
 
+            {/* SUCCESS MESSAGE */}
+            {success && (
+              <p role="status" className="text-sm text-[#183E32]">
+                {success}
+              </p>
+            )}
+
             {/* SIGN IN */}
             <button
               type="submit"
-              className="flex w-full cursor-pointer items-center justify-between bg-[#183E32] px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-[#285745] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#183E32]"
+              disabled={loading}
+              className="flex w-full cursor-pointer items-center justify-between bg-[#183E32] px-6 py-4 text-sm font-semibold text-white transition-colors hover:bg-[#285745] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#183E32] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Sign in
+              {loading ? "Signing in..." : "Sign in"}
               <ArrowRight size={19} />
             </button>
           </form>
@@ -142,7 +182,6 @@ export default function Login() {
           <p className="mt-10 text-center text-xs text-[#899388]">
             Coding in Color · Donor & Funder Platform
           </p>
-
         </div>
       </section>
     </main>

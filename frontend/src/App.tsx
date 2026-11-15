@@ -6,10 +6,11 @@ import {
   Navigate,
 } from "react-router-dom";
 
+import OutreachPage from "./pages/OutreachPage.tsx";
 import Login from "./pages/Login";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
-import DonorsPage from "./pages/DonorsPage";
+import DonorsPage from "./pages/DonorsPage.tsx";
 import DonorDetails from "./pages/DonorDetails";
 import FollowUpsPage from "./pages/FollowUpsPage";
 
@@ -46,6 +47,13 @@ export default function App() {
           <Route
             path="followups"
             element={<FollowUpsPage />}
+          />
+
+          {/* Outreach Page*/}
+
+          <Route
+            path="outreach"
+            element={<OutreachPage />} 
           />
 
           {/* Other Dashboard Sections */}

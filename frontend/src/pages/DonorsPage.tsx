@@ -11,7 +11,7 @@ import {
   mockDonors,
   donorName,
   formatMoney,
-} from "../data/mockDonors";
+} from "../data/mockDonors.ts";
 
 export default function DonorsPage() {
   const { role } = useParams();
