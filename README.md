@@ -80,18 +80,60 @@ Coding in Color's donors and funders lived in one spreadsheet plus separate Zeff
 
 ## Run it locally
 
+You need Python 3.12+, Node 20+, and a Supabase project.
+
 ```bash
-git clone https://github.com/2026-Arizona-Opportunity-Hack/Techie Tigers-CodinginColor.git
-cd Techie Tigers-CodinginColor
-cp .env.example .env   # fill in your own values — never commit .env
-# install + start commands here
+git clone https://github.com/2026-Arizona-Opportunity-Hack/Techie-Tigers-CodinginColor.git
+cd Techie-Tigers-CodinginColor
+cp .env.example .env          # backend settings — fill in your own values, never commit .env
 ```
 
+**1. Database (once):** in the Supabase SQL Editor, run `backend/database/database.sql`.
+Then create users in Supabase → Authentication and add a matching row in the `users`
+table with a role (`admin`, `fundraising` or `board_member`).
+
+**2. Backend** (http://localhost:8000, API docs at /docs):
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+**3. Frontend** (http://localhost:5173), in a second terminal:
+```bash
+cd frontend
+npm install
+cp .env.example .env.local    # if present; otherwise create it with the 3 values below
+npm run dev
+```
+### Environment variables
+
+Backend — `.env` at the repo root:
+
+| Name | Value |
+|---|---|
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | Supabase publishable key (`sb_publishable_...`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret key (`sb_secret_...`) — backend only, never in the frontend |
+| `FRONTEND_ORIGINS` | Comma-separated allowed origins, e.g. `http://localhost:5173` |
+| `OPENAI_API_KEY` | Optional — for AI-drafted donor updates (falls back to a template) |
+
+Frontend — `frontend/.env.local` locally, and Vercel → Environment Variables in production:
+
+| Name | Value |
+|---|---|
+| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Supabase publishable key only — never the secret key |
+| `VITE_API_URL` | `http://localhost:8000` locally, the Render URL in production |
+
+On Render, set the same backend variables under the service's Environment tab.
 ## Links
 
-- Live demo:
-- Demo video:
-- Design / docs:
+- Live demo: https://frontend-techie-tigers.vercel.app may take up to a minute on first launch
+- Demo video: https://techie-tigers-codingincolor.onrender.com — interactive docs at `/docs` 
+- Design / docs: [Architecture decisions](docs/decisions.md) · [Read API](docs/read-api.md)
 
 ## After the hackathon
 
