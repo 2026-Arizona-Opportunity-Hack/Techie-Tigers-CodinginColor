@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -12,6 +12,7 @@ import {
 
 import {
   ApiError,
+  draftThankYou,
   formatDate,
   formatMoney,
   getContactLinks,
@@ -27,7 +28,7 @@ const ICONS = {
   next_step: CheckCircle2,
 };
 
-function TimelineRow({ item }: { item: TimelineItem }) {
+function TimelineRow({ item, action }: { item: TimelineItem; action?: React.ReactNode }) {
   const Icon = ICONS[item.type];
   const meta =
     item.type === "gift"
@@ -47,7 +48,10 @@ function TimelineRow({ item }: { item: TimelineItem }) {
         <p className="text-sm font-semibold first-letter:uppercase">{item.title}</p>
         {meta && <p className="mt-1 text-xs text-[#829087]">{meta}</p>}
       </div>
-      <p className="shrink-0 text-xs text-[#829087]">{formatDate(item.date)}</p>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <p className="text-xs text-[#829087]">{formatDate(item.date)}</p>
+        {action}
+      </div>
     </li>
   );
 }
@@ -93,6 +97,22 @@ export default function DonorDetails() {
       cancelled = true;
     };
   }, [id]);
+
+  // "Thank" on a gift: draft a thank-you, then open it in Outreach to review and send.
+  const navigate = useNavigate();
+  const [thankingGift, setThankingGift] = useState<number | null>(null);
+  const [thankError, setThankError] = useState("");
+  async function thank(giftId: number) {
+    setThankingGift(giftId);
+    setThankError("");
+    try {
+      const draft = await draftThankYou(giftId);
+      navigate(`/${role}/outreach?draft=${draft.id}`);
+    } catch (err) {
+      setThankError((err as Error).message);
+      setThankingGift(null);
+    }
+  }
 
   const current = result?.id === id ? result : null;
   const error = Number.isInteger(id) ? current?.error : "Donor not found.";
@@ -209,11 +229,32 @@ export default function DonorDetails() {
           {history.length === 0 ? (
             <p className="text-sm text-[#829087]">Nothing recorded yet.</p>
           ) : (
+            <>
             <ul>
               {history.map((item) => (
-                <TimelineRow key={`${item.type}-${item.id}`} item={item} />
+                <TimelineRow
+                  key={`${item.type}-${item.id}`}
+                  item={item}
+                  action={
+                    item.type === "gift" && donor.active ? (
+                      <button
+                        type="button"
+                        onClick={() => thank(item.id)}
+                        disabled={thankingGift !== null}
+                        aria-label={`Draft a thank-you for the ${item.title}`}
+                        className="border border-[#183E32] px-2.5 py-1 text-xs font-semibold text-[#183E32] hover:bg-[#EDF0E8] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
+                      >
+                        {thankingGift === item.id ? "Drafting…" : "Thank"}
+                      </button>
+                    ) : undefined
+                  }
+                />
               ))}
             </ul>
+            {thankError && (
+              <p role="alert" className="mt-3 text-sm text-[#9A3B2E]">{thankError}</p>
+            )}
+            </>
           )}
         </section>
 
