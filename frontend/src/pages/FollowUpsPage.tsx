@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { CalendarDays, Check, Mail, Plus, X } from "lucide-react";
 
 import {
   completeNextStep,
   createNextStep,
+  draftQuarterlyUpdate,
   formatDate,
   getDonors,
   getMyQueue,
@@ -50,6 +51,22 @@ export default function FollowUpsPage() {
   const [result, setResult] = useState<{ version: number; queue?: MyQueue; error?: string }>();
   const [busyStep, setBusyStep] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
+
+  // "Draft update" on a donor owed a quarterly touch: draft (or reuse the
+  // waiting) quarterly update, then open it in Outreach to review and send.
+  const navigate = useNavigate();
+  const [draftingDonor, setDraftingDonor] = useState<number | null>(null);
+  async function draftQuarterly(donorId: number) {
+    setDraftingDonor(donorId);
+    setActionError("");
+    try {
+      const draft = await draftQuarterlyUpdate(donorId);
+      navigate(`/${role}/outreach?draft=${draft.id}`);
+    } catch (err) {
+      setActionError((err as Error).message);
+      setDraftingDonor(null);
+    }
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [donors, setDonors] = useState<Donor[] | null>(null);
@@ -269,9 +286,18 @@ export default function FollowUpsPage() {
               {queue.quarterly_owed.map((d) => (
                 <li
                   key={d.donor_id}
-                  className="border-b border-[#E0E4DB] px-6 py-4 text-sm last:border-0"
+                  className="flex items-center justify-between gap-4 border-b border-[#E0E4DB] px-6 py-4 text-sm last:border-0"
                 >
                   {donorLink(d.donor_id, d.donor_name)}
+                  <button
+                    type="button"
+                    onClick={() => draftQuarterly(d.donor_id)}
+                    disabled={draftingDonor !== null}
+                    aria-label={`Draft a quarterly update for ${d.donor_name}`}
+                    className="shrink-0 cursor-pointer border border-[#183E32] px-3 py-1.5 text-xs font-semibold text-[#183E32] hover:bg-[#EDF0E8] disabled:opacity-50"
+                  >
+                    {draftingDonor === d.donor_id ? "Drafting…" : "Draft update"}
+                  </button>
                 </li>
               ))}
             </Section>

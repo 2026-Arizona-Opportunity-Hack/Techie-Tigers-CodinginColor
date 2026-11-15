@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from postgrest.exceptions import APIError
 from pydantic import BaseModel
 from ..auth import CurrentUser, get_current_user, require_roles
-from ..common import user_names, donor_display_name
+from ..common import user_names, donor_display_name, get_donor_or_404
 from ..db import service_client
-from ..templates import thank_you, contact_links
+from ..templates import thank_you, contact_links, quarterly_update
 
 
 router = APIRouter(prefix="/communications", tags=["communications"])
@@ -89,6 +89,49 @@ def draft_thank_you(body: ThankYouIn, user: CurrentUser = Depends(get_current_us
         raise HTTPException(400, "Can't draft: gift not found, donor inactive, "
                                  "no email or phone, or already thanked")
     return draft
+
+
+class QuarterlyIn(BaseModel):
+    donor_id: int
+
+
+@router.post("/quarterly", status_code=201)
+def draft_quarterly(body: QuarterlyIn, user: CurrentUser = Depends(get_current_user)):
+    """Draft a quarterly update for one donor, pre-filled from the same template
+    as the CEO's bulk job. Any role that can see the donor may ask (RLS limits
+    board members to their own donors). If a quarterly draft is already waiting
+    for this donor, that one is returned instead of stacking a duplicate."""
+    d = get_donor_or_404(user.db, body.donor_id,
+                         "id, first_name, organization_name, email, phone, active")
+    if not d["active"]:
+        raise HTTPException(400, "This donor is inactive")
+    channel = "email" if d["email"] else "text" if d["phone"] else None
+    if not channel:
+        raise HTTPException(400, "This donor has no email or phone on file")
+
+    waiting = (user.db.table("communications").select("*")
+               .eq("donor_id", d["id"]).eq("kind", "quarterly").eq("status", "draft")
+               .limit(1).execute().data)
+    if waiting:
+        return waiting[0]
+
+    outcomes = (user.db.table("outcomes").select("year, description, programs(name)")
+                .order("year", desc=True).limit(8).execute().data)
+    jan1 = date(date.today().year, 1, 1).isoformat()
+    gifts = (user.db.table("gifts").select("amount, gift_date")
+             .eq("donor_id", d["id"]).execute().data)
+    given_this_year = sum(float(g["amount"]) for g in gifts if g["gift_date"] >= jan1)
+    gave_before = any(g["gift_date"] < jan1 for g in gifts)
+
+    subject, text = quarterly_update(d, outcomes, given_this_year, gave_before)
+    try:
+        return user.db.table("communications").insert({
+            "donor_id": d["id"], "user_id": user.id, "channel": channel,
+            "kind": "quarterly", "subject": subject, "body": text,
+            "status": "draft", "ai_generated": False,
+        }).execute().data[0]
+    except APIError as e:
+        raise HTTPException(400, e.message)
 
 
 class DraftEdit(BaseModel):

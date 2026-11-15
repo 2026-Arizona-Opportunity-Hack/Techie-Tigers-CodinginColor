@@ -15,6 +15,7 @@ import {
 
 import {
   ApiError,
+  draftQuarterlyUpdate,
   draftThankYou,
   formatDate,
   formatMoney,
@@ -242,6 +243,21 @@ export default function DonorDetails() {
     }
   }
 
+  // Quarterly update for just this donor, pre-filled from the template.
+  const [draftingQuarterly, setDraftingQuarterly] = useState(false);
+  const [quarterlyError, setQuarterlyError] = useState("");
+  async function draftQuarterly(donorId: number) {
+    setDraftingQuarterly(true);
+    setQuarterlyError("");
+    try {
+      const draft = await draftQuarterlyUpdate(donorId);
+      navigate(`/${role}/outreach?draft=${draft.id}`);
+    } catch (err) {
+      setQuarterlyError((err as Error).message);
+      setDraftingQuarterly(false);
+    }
+  }
+
   const current = result?.id === id ? result : null;
   const error = Number.isInteger(id) ? current?.error : "Donor not found.";
   const data = current?.data;
@@ -342,8 +358,22 @@ export default function DonorDetails() {
           )}
         </div>
 
-        {contactButtons.length > 0 && (
+        {(contactButtons.length > 0 || donor.active) && (
           <div className="flex flex-wrap gap-2">
+            {donor.active && (donor.email || donor.phone) && (
+              <button
+                type="button"
+                onClick={() => draftQuarterly(donor.id)}
+                disabled={draftingQuarterly}
+                className="inline-flex cursor-pointer items-center gap-2 border border-[#183E32] bg-[#183E32] px-4 py-2 text-sm text-[#F5F0E6] transition-colors hover:bg-[#254C3E] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
+              >
+                <FileText size={16} aria-hidden="true" />
+                {draftingQuarterly ? "Drafting…" : "Draft quarterly update"}
+              </button>
+            )}
+            {quarterlyError && (
+              <p role="alert" className="w-full text-sm text-[#9A3B2E]">{quarterlyError}</p>
+            )}
             {contactButtons.map(({ label, href, icon: Icon, newTab }) => (
               <a
                 key={label}

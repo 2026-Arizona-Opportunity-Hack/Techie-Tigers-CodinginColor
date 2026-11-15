@@ -329,6 +329,14 @@ export const draftThankYou = (giftId: number) =>
     body: JSON.stringify({ gift_id: giftId }),
   });
 
+// Draft a quarterly update for one donor (board members: their own donors).
+// Returns the donor's waiting quarterly draft instead if one already exists.
+export const draftQuarterlyUpdate = (donorId: number) =>
+  apiFetch<{ id: number }>("/communications/quarterly", {
+    method: "POST",
+    body: JSON.stringify({ donor_id: donorId }),
+  });
+
 // Admin only: draft a quarterly update for every active donor nobody has
 // contacted in 90 days. Safe to run twice; donors with a pending one are skipped.
 export const draftQuarterlyUpdates = () =>
