@@ -1,5 +1,6 @@
 
 import { NavLink, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import {
   LayoutDashboard,
   Users,
@@ -52,6 +53,11 @@ export const roleNames: Record<Role, string> = {
   board: "Board Member",
   fundraising: "Fundraising",
 };
+=======
+import { LogOut, Asterisk } from "lucide-react";
+import { useAuth } from "../auth/AuthProvider";
+import { roleMenus, roleNames, type Role } from "../lib/roles";
+>>>>>>> 4514ec83750d4be43339dca4dd0691e687dc29f1
 
 interface SidebarProps {
   role: Role;

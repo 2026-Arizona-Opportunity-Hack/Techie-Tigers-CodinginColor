@@ -8,7 +8,7 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getMe, type BackendRole, type Me } from "../lib/api";
-import type { Role } from "../components/Sidebar";
+import type { Role } from "../lib/roles";
 
 // Backend role string -> frontend URL segment
 const routeForRole: Record<BackendRole, Role> = {
@@ -30,7 +30,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // undefined = still checking whether there's a saved session
   const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [state, setState] = useState<AuthState>({ status: "loading" });
+  // The backend's answer, tagged with whose login it was for.
+  const [result, setResult] = useState<{ userId: string; state: AuthState } | null>(null);
 
   // 1. Keep track of the Supabase session (survives page refresh).
   useEffect(() => {
@@ -48,45 +49,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const userId = session?.user.id;
 
   useEffect(() => {
-    if (!checked) return;
-
-    if (!userId) {
-      setState({ status: "signedOut" });
-      return;
-    }
+    if (!userId) return;
 
     let cancelled = false;
-    setState({ status: "loading" });
-
     getMe()
       .then((me) => {
         if (cancelled) return;
         const role = routeForRole[me.role];
-        if (!role) {
-          setState({
-            status: "error",
-            message: `Your account has an unknown role ("${me.role}"). Ask an admin to fix it.`,
-          });
-        } else {
-          setState({ status: "ready", me, role });
-        }
+        setResult({
+          userId,
+          state: role
+            ? { status: "ready", me, role }
+            : {
+                status: "error",
+                message: `Your account has an unknown role ("${me.role}"). Ask an admin to fix it.`,
+              },
+        });
       })
       .catch((err) => {
         if (cancelled) return;
-        setState({
-          status: "error",
-          message:
-            err instanceof Error ? err.message : "Could not load your account.",
+        setResult({
+          userId,
+          state: {
+            status: "error",
+            message:
+              err instanceof Error ? err.message : "Could not load your account.",
+          },
         });
       });
 
     return () => {
       cancelled = true;
     };
-  }, [checked, userId]);
+  }, [userId]);
+
+  // Worked out on each render rather than stored, so it can't go stale:
+  // signed out, or still waiting on the backend for this user, or its answer.
+  const state: AuthState = !checked
+    ? { status: "loading" }
+    : !userId
+      ? { status: "signedOut" }
+      : result?.userId === userId
+        ? result.state
+        : { status: "loading" };
 
   async function signOut() {
-    await supabase.auth.signOut(); // onAuthStateChange sets state to signedOut
+    setResult(null); // so signing back in never shows the old answer
+    await supabase.auth.signOut(); // onAuthStateChange clears the session
   }
 
   return (
