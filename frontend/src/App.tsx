@@ -19,6 +19,7 @@ import ImportsPage from "./pages/ImportsPage";
 import RetentionPage from "./pages/RetentionPage";
 import OverviewPage from "./pages/OverviewPage";
 import DuplicatesPage from "./pages/DuplicatesPage";
+import ApiKeysPage from "./pages/ApiKeysPage";
 import BoardMembersPage from "./pages/BoardMembersPage";
 import BoardMemberPage from "./pages/BoardMemberPage";
 
@@ -104,6 +105,12 @@ export default function App() {
           <Route
             path="members/:memberId"
             element={<BoardMemberPage />}
+          />
+
+          {/* API keys for the org dashboard (admin only) */}
+          <Route
+            path="api-keys"
+            element={<ApiKeysPage />}
           />
 
           {/* Other Dashboard Sections */}

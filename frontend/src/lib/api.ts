@@ -419,3 +419,20 @@ export const getBoardMember = (id: string) =>
   apiFetch<BoardMemberDetail>(`/admin/board-members/${encodeURIComponent(id)}`);
 export const getMemberDonors = (ownerId: string) =>
   apiFetch<Donor[]>(`/donors?limit=500&include_inactive=true&owner_id=${encodeURIComponent(ownerId)}`);
+
+// ---- API keys for CIC's org dashboard (backend/app/routers/public_api.py; admin only) ----
+export type ApiKey = {
+  id: number;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
+};
+
+export type NewApiKey = { id: number; name: string; key: string; warning: string };
+
+export const getApiKeys = () => apiFetch<ApiKey[]>("/admin/api-keys");
+export const createApiKey = (name: string) =>
+  apiFetch<NewApiKey>("/admin/api-keys", { method: "POST", body: JSON.stringify({ name }) });
+export const revokeApiKey = (id: number) =>
+  apiFetch<{ revoked: number }>(`/admin/api-keys/${id}/revoke`, { method: "POST" });
