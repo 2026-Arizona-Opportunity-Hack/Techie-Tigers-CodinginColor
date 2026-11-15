@@ -21,7 +21,7 @@ export default function RetentionBadge({
           ? `Last gave ${lastGiftDate.slice(0, 4)}`
           : "No recent gifts";
     return (
-      <span className="inline-flex items-center gap-1.5 border border-dashed border-[#C8D2C7] px-2.5 py-1 text-xs text-[#7C887C]">
+      <span className="inline-flex items-center gap-1.5 border border-dashed border-[#C8D2C7] px-2.5 py-1 text-xs text-[#5E6B61]">
         {text}
       </span>
     );

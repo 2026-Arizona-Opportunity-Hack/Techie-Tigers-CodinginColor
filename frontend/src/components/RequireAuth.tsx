@@ -20,7 +20,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   if (auth.status === "loading") {
     return (
       <FullPageMessage>
-        <p role="status" className="text-sm text-[#788279]">
+        <p role="status" className="text-sm text-[#5E6B61]">
           Loading your workspace…
         </p>
       </FullPageMessage>

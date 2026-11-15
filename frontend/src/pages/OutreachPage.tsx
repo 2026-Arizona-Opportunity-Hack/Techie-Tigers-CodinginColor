@@ -268,11 +268,11 @@ export default function OutreachPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor relationships / Communications
           </p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">Stay in touch.</h2>
-          <p className="mt-3 text-sm text-[#788279]">
+          <p className="mt-3 text-sm text-[#5E6B61]">
             The system drafts. You review, send it from your own email or phone, then mark it
             sent.
           </p>
@@ -313,7 +313,7 @@ export default function OutreachPage() {
                 aria-pressed={tab === t}
                 onClick={() => switchTab(t)}
                 className={`flex-1 p-4 text-sm font-semibold ${
-                  tab === t ? "bg-[#E5EBE1] text-[#183E32]" : "text-[#6F8172] hover:bg-[#EDF0E8]"
+                  tab === t ? "bg-[#E5EBE1] text-[#183E32]" : "text-[#5E6B61] hover:bg-[#EDF0E8]"
                 }`}
               >
                 {t === "draft" ? "Drafts to review" : "Sent history"}
@@ -326,9 +326,9 @@ export default function OutreachPage() {
               Couldn't load messages: {list.error}
             </p>
           ) : listLoading ? (
-            <p role="status" className="p-5 text-sm text-[#829087]">Loading…</p>
+            <p role="status" className="p-5 text-sm text-[#5E6B61]">Loading…</p>
           ) : messages.length === 0 ? (
-            <p className="p-5 text-sm text-[#829087]">
+            <p className="p-5 text-sm text-[#5E6B61]">
               {tab === "draft"
                 ? "No drafts waiting. New gifts and the quarterly job create them."
                 : "Nothing sent yet."}
@@ -346,7 +346,7 @@ export default function OutreachPage() {
                     }`}
                   >
                     <p className="text-sm font-semibold text-[#242A26]">{m.donor_name}</p>
-                    <p className="mt-1 text-xs text-[#829087] first-letter:uppercase">
+                    <p className="mt-1 text-xs text-[#5E6B61] first-letter:uppercase">
                       {kindLabel(m)} ·{" "}
                       {m.status === "sent"
                         ? `${m.sent_by ?? "Someone"}, ${formatDate(m.sent_at)}`
@@ -365,12 +365,12 @@ export default function OutreachPage() {
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <Mail size={30} className="text-[#52705D]" aria-hidden="true" />
               <h3 className="font-display text-3xl text-[#183E32]">Select a message.</h3>
-              <p className="text-sm text-[#829087]">
+              <p className="text-sm text-[#5E6B61]">
                 Choose a message on the left to review it.
               </p>
             </div>
           ) : !current ? (
-            <p role="status" className="text-sm text-[#829087]">Loading message…</p>
+            <p role="status" className="text-sm text-[#5E6B61]">Loading message…</p>
           ) : current.error ? (
             <p role="alert" className="text-sm text-[#9A3B2E]">
               Couldn't load this message: {current.error}
@@ -381,7 +381,7 @@ export default function OutreachPage() {
                 <h3 className="font-display text-3xl text-[#183E32]">
                   {isDraft ? "Review draft." : "Sent message."}
                 </h3>
-                <p className="mt-2 text-sm text-[#657365]">
+                <p className="mt-2 text-sm text-[#5E6B61]">
                   To{" "}
                   <Link
                     to={`/${role}/donors/${selected.donor_id}`}
@@ -419,7 +419,7 @@ export default function OutreachPage() {
                 />
               </label>
               {isDraft && (
-                <p className="text-xs text-[#829087]">
+                <p className="text-xs text-[#5E6B61]">
                   "[Your name]" is replaced with your name when you open it to send.
                 </p>
               )}
@@ -467,7 +467,7 @@ export default function OutreachPage() {
                       type="button"
                       onClick={skip}
                       disabled={busy}
-                      className="px-3 py-3 text-sm text-[#7C887C] underline underline-offset-2 hover:text-[#9A3B2E] disabled:opacity-50"
+                      className="px-3 py-3 text-sm text-[#5E6B61] underline underline-offset-2 hover:text-[#9A3B2E] disabled:opacity-50"
                     >
                       Dismiss draft
                     </button>
@@ -504,7 +504,7 @@ export default function OutreachPage() {
                 <X size={22} aria-hidden="true" />
               </button>
             </div>
-            <p className="mb-6 text-sm text-[#788279]">
+            <p className="mb-6 text-sm text-[#5E6B61]">
               For a call, text, email or meeting that already happened, so the next person
               knows.
             </p>

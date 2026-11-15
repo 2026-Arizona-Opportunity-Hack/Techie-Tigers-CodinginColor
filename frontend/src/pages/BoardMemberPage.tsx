@@ -16,9 +16,9 @@ const pct = (value: number | null) => (value === null ? "—" : `${value}%`);
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="border border-[#D8DED4] bg-[#FBF9F3] p-5">
-      <p className="text-[11px] uppercase tracking-wider text-[#6F8172]">{label}</p>
+      <p className="text-[11px] uppercase tracking-wider text-[#5E6B61]">{label}</p>
       <p className="mt-2 font-display text-3xl text-[#183E32] tabular-nums">{value}</p>
-      {note && <p className="mt-1 text-xs text-[#819083]">{note}</p>}
+      {note && <p className="mt-1 text-xs text-[#5E6B61]">{note}</p>}
     </div>
   );
 }
@@ -81,7 +81,7 @@ export default function BoardMemberPage() {
     return (
       <div className="space-y-6">
         {back}
-        <div role="status" className="p-12 text-center text-sm text-[#819083]">
+        <div role="status" className="p-12 text-center text-sm text-[#5E6B61]">
           Loading board member…
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function BoardMemberPage() {
 
       {/* Heading */}
       <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+        <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
           Team / Board members {member.active ? "" : "/ Inactive"}
         </p>
         <h2 className="mt-3 font-display text-5xl text-[#183E32]">{member.name}</h2>
@@ -131,13 +131,13 @@ export default function BoardMemberPage() {
         <h3 className="font-display text-2xl text-[#183E32]">Retention by year</h3>
         <div className="overflow-x-auto border border-[#D8DED4] bg-[#FBF9F3]">
           {history.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#819083]">
+            <div className="p-8 text-center text-sm text-[#5E6B61]">
               None of this member's donors have given yet.
             </div>
           ) : (
             <table className="w-full min-w-[650px] text-left">
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-                <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+                <tr className="text-[11px] uppercase tracking-wider text-[#5E6B61]">
                   <th className="px-6 py-4 font-semibold">Year</th>
                   <th className="px-6 py-4 font-semibold">Retention</th>
                   <th className="px-6 py-4 font-semibold">Donors giving</th>
@@ -152,7 +152,7 @@ export default function BoardMemberPage() {
                     <td className="px-6 py-4 text-sm font-semibold text-[#242A26]">
                       {y.year}
                       {y.in_progress && (
-                        <span className="ml-2 text-xs font-normal text-[#819083]">so far</span>
+                        <span className="ml-2 text-xs font-normal text-[#5E6B61]">so far</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-[#183E32] tabular-nums">
@@ -177,13 +177,13 @@ export default function BoardMemberPage() {
         <h3 className="font-display text-2xl text-[#183E32]">Donors ({donors.length})</h3>
         <div className="overflow-x-auto border border-[#D8DED4] bg-[#FBF9F3]">
           {donors.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#819083]">
+            <div className="p-8 text-center text-sm text-[#5E6B61]">
               No donors assigned to this member.
             </div>
           ) : (
             <table className="w-full min-w-[650px] text-left">
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-                <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+                <tr className="text-[11px] uppercase tracking-wider text-[#5E6B61]">
                   <th className="px-6 py-4 font-semibold">Donor</th>
                   <th className="px-6 py-4 font-semibold">Type</th>
                   <th className="px-6 py-4 font-semibold">Total given</th>
@@ -207,7 +207,7 @@ export default function BoardMemberPage() {
                   >
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold text-[#242A26]">{d.display_name}</p>
-                      <p className="mt-1 text-xs text-[#819083]">{d.email ?? "No email"}</p>
+                      <p className="mt-1 text-xs text-[#5E6B61]">{d.email ?? "No email"}</p>
                     </td>
                     <td className="px-6 py-4 text-sm capitalize">{d.donor_type}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-[#183E32] tabular-nums">

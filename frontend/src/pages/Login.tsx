@@ -90,7 +90,7 @@ export default function Login() {
       <section className="flex min-h-screen items-center justify-center px-6 py-28">
         <div className="w-full max-w-[400px]">
           <div className="mb-10">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#7B8D80]">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5E6B61]">
               Member access
             </p>
 
@@ -98,7 +98,7 @@ export default function Login() {
               Welcome back.
             </h1>
 
-            <p className="mt-4 text-sm text-[#788279]">
+            <p className="mt-4 text-sm text-[#5E6B61]">
               Sign in to your workspace.
             </p>
           </div>
@@ -122,7 +122,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@codingincolor.net"
                 disabled={busy}
-                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
+                className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 text-sm outline-none transition-colors placeholder:text-[#5E6B61] focus:border-[#183E32] disabled:opacity-60"
               />
             </div>
 
@@ -145,7 +145,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   disabled={busy}
-                  className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#A1A99F] focus:border-[#183E32] disabled:opacity-60"
+                  className="w-full border-0 border-b border-[#BFC8BE] bg-transparent px-0 py-3 pr-10 text-sm outline-none transition-colors placeholder:text-[#5E6B61] focus:border-[#183E32] disabled:opacity-60"
                 />
 
                 <button
@@ -154,7 +154,7 @@ export default function Login() {
                   aria-label={
                     showPassword ? "Hide password" : "Show password"
                   }
-                  className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer text-[#7B8D80] hover:text-[#183E32]"
+                  className="absolute right-0 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center text-[#5E6B61] hover:text-[#183E32] focus-visible:outline-2 focus-visible:outline-[#183E32]"
                 >
                   {showPassword ? (
                     <EyeOff size={19} />
@@ -183,7 +183,7 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="mt-10 text-center text-xs text-[#899388]">
+          <p className="mt-10 text-center text-xs text-[#5E6B61]">
             Coding in Color · Donor & Funder Platform
           </p>
         </div>

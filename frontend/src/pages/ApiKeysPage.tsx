@@ -91,9 +91,9 @@ export default function ApiKeysPage() {
       {/* Page Heading */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">Settings / API keys</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">Settings / API keys</p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">API keys.</h2>
-          <p className="mt-3 max-w-2xl text-sm text-[#788279]">
+          <p className="mt-3 max-w-2xl text-sm text-[#5E6B61]">
             Keys let CIC's org dashboard read giving totals by period, program and board member.
             The API never returns donor names or contact details. Revoke a key any time.
           </p>
@@ -111,7 +111,7 @@ export default function ApiKeysPage() {
         className="flex flex-wrap items-end gap-4 border border-[#D8DED4] bg-[#FBF9F3] p-5"
       >
         <label className="flex min-w-[240px] flex-1 flex-col gap-2 text-sm">
-          <span className="text-[11px] uppercase tracking-wider text-[#6F8172]">New key name</span>
+          <span className="text-[11px] uppercase tracking-wider text-[#5E6B61]">New key name</span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -167,17 +167,17 @@ export default function ApiKeysPage() {
       {/* Keys Table */}
       <div className="overflow-x-auto border border-[#D8DED4] bg-[#FBF9F3]">
         {loading ? (
-          <div role="status" className="p-12 text-center text-sm text-[#819083]">
+          <div role="status" className="p-12 text-center text-sm text-[#5E6B61]">
             Loading keys…
           </div>
         ) : keys.length === 0 ? (
-          <div className="p-12 text-center text-sm text-[#819083]">
+          <div className="p-12 text-center text-sm text-[#5E6B61]">
             No API keys yet. Create one for the org dashboard above.
           </div>
         ) : (
           <table className="w-full min-w-[650px] text-left">
             <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-              <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+              <tr className="text-[11px] uppercase tracking-wider text-[#5E6B61]">
                 <th className="px-6 py-4 font-semibold">Name</th>
                 <th className="px-6 py-4 font-semibold">Created</th>
                 <th className="px-6 py-4 font-semibold">Last used</th>

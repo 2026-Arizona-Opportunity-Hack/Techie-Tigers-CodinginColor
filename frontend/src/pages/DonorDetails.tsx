@@ -96,7 +96,7 @@ function FunderReport({ donorId, donorName }: { donorId: number; donorName: stri
           Funder Report
         </h3>
       </div>
-      <p className="mb-4 text-xs text-[#829087]">
+      <p className="mb-4 text-xs text-[#5E6B61]">
         {donorName}'s giving by year and program, the outcomes it funded, and
         every gift. Ready to print or save as PDF.
       </p>
@@ -153,10 +153,10 @@ function TimelineRow({ item, action }: { item: TimelineItem; action?: React.Reac
       <Icon size={17} className="mt-0.5 shrink-0 text-[#52705D]" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold first-letter:uppercase">{item.title}</p>
-        {meta && <p className="mt-1 text-xs text-[#829087]">{meta}</p>}
+        {meta && <p className="mt-1 text-xs text-[#5E6B61]">{meta}</p>}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
-        <p className="text-xs text-[#829087]">{formatDate(item.date)}</p>
+        <p className="text-xs text-[#5E6B61]">{formatDate(item.date)}</p>
         {action}
       </div>
     </li>
@@ -256,7 +256,7 @@ export default function DonorDetails() {
     return (
       <div className="space-y-6">
         {backLink}
-        <p role="alert" className="text-sm text-[#788279]">{error}</p>
+        <p role="alert" className="text-sm text-[#5E6B61]">{error}</p>
       </div>
     );
   }
@@ -265,7 +265,7 @@ export default function DonorDetails() {
     return (
       <div className="space-y-6">
         {backLink}
-        <p role="status" className="text-sm text-[#788279]">Loading donor…</p>
+        <p role="status" className="text-sm text-[#5E6B61]">Loading donor…</p>
       </div>
     );
   }
@@ -302,7 +302,7 @@ export default function DonorDetails() {
       {/* Donor Header */}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#D8DED4] pb-8">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor profile / #{donor.id}
           </p>
 
@@ -310,14 +310,14 @@ export default function DonorDetails() {
             {donor.display_name}
           </h2>
 
-          <p className="mt-3 text-sm text-[#7C887C]">
+          <p className="mt-3 text-sm text-[#5E6B61]">
             <span className="capitalize">{donor.donor_type}</span> ·{" "}
             {donor.active ? "Active" : "Inactive"} · Owner:{" "}
             {donor.owner_name ?? "Unassigned"}
           </p>
 
           {retention?.id === donor.id && (
-            <div className="mt-3 flex items-center gap-2 text-xs text-[#829087]">
+            <div className="mt-3 flex items-center gap-2 text-xs text-[#5E6B61]">
               {new Date().getFullYear()} giving:
               <RetentionBadge
                 status={retention.status}
@@ -356,7 +356,7 @@ export default function DonorDetails() {
           },
         ].map((stat) => (
           <div key={stat.label} className="border border-[#D8DED4] bg-[#FBF9F3] p-6">
-            <p className="text-xs text-[#829087]">{stat.label}</p>
+            <p className="text-xs text-[#5E6B61]">{stat.label}</p>
             <p className="mt-4 font-display text-3xl text-[#183E32]">{stat.value}</p>
           </div>
         ))}
@@ -374,12 +374,12 @@ export default function DonorDetails() {
               Relationship Timeline
             </h3>
           </div>
-          <p className="mb-4 text-xs text-[#829087]">
+          <p className="mb-4 text-xs text-[#5E6B61]">
             Gifts, messages sent, and finished follow-ups, newest first.
           </p>
 
           {history.length === 0 ? (
-            <p className="text-sm text-[#829087]">Nothing recorded yet.</p>
+            <p className="text-sm text-[#5E6B61]">Nothing recorded yet.</p>
           ) : (
             <>
             <ul>
@@ -393,7 +393,7 @@ export default function DonorDetails() {
                         type="button"
                         disabled
                         aria-label={`${thankedState(item.date)} for the ${item.title}`}
-                        className="cursor-not-allowed border border-[#D8DED4] px-2.5 py-1 text-xs text-[#9AA49A]"
+                        className="cursor-not-allowed border border-[#D8DED4] px-2.5 py-1 text-xs text-[#5E6B61]"
                       >
                         {thankedState(item.date) === "Thanked" ? "✓ Thanked" : "Thank-you drafted"}
                       </button>
@@ -431,12 +431,12 @@ export default function DonorDetails() {
                 Open Items
               </h3>
             </div>
-            <p className="mb-4 text-xs text-[#829087]">
+            <p className="mb-4 text-xs text-[#5E6B61]">
               Drafts to review and follow-ups due, soonest first.
             </p>
 
             {open.length === 0 ? (
-              <p className="text-sm text-[#829087]">Nothing open.</p>
+              <p className="text-sm text-[#5E6B61]">Nothing open.</p>
             ) : (
               <ul>
                 {open.map((item) => (

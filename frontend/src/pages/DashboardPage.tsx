@@ -66,7 +66,7 @@ export default function DashboardPage() {
       {/* Page Description */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-[#7B887C]">
+          <p className="text-sm text-[#5E6B61]">
             Coding in Color / {page.label}
           </p>
 
@@ -75,7 +75,7 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <span className="border border-[#C8D2C7] px-3 py-2 text-xs text-[#64776A]">
+        <span className="border border-[#C8D2C7] px-3 py-2 text-xs text-[#5E6B61]">
           Demo Data
         </span>
       </div>
@@ -93,7 +93,7 @@ export default function DashboardPage() {
                   className="border border-[#D8DED4] bg-[#FBF9F3] p-6"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#708174]">
+                    <span className="text-xs text-[#5E6B61]">
                       {stat.label}
                     </span>
 
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                         {donor.name}
                       </p>
 
-                      <p className="mt-1 text-xs text-[#829087]">
+                      <p className="mt-1 text-xs text-[#5E6B61]">
                         {donor.type}
                       </p>
                     </div>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
 
                     <div>
                       <p className="text-sm">{task}</p>
-                      <p className="mt-1 text-xs text-[#829087]">
+                      <p className="mt-1 text-xs text-[#5E6B61]">
                         Task {index + 1}
                       </p>
                     </div>
@@ -177,7 +177,7 @@ export default function DashboardPage() {
               Donor Directory
             </h3>
 
-            <p className="mt-1 text-xs text-[#829087]">
+            <p className="mt-1 text-xs text-[#5E6B61]">
               Example records for frontend development.
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                   {donor.name}
                 </p>
 
-                <p className="mt-1 text-xs text-[#829087]">
+                <p className="mt-1 text-xs text-[#5E6B61]">
                   {donor.type}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
             {page.label}
           </h3>
 
-          <p className="mt-3 max-w-sm text-sm leading-6 text-[#7C887C]">
+          <p className="mt-3 max-w-sm text-sm leading-6 text-[#5E6B61]">
             This workspace is ready for its features.
             We'll connect the data and actions here next.
           </p>

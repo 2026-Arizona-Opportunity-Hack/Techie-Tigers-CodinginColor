@@ -30,10 +30,10 @@ function Section({
     <section className="border border-[#D8DED4] bg-[#FBF9F3]">
       <div className="border-b border-[#D8DED4] px-6 py-5">
         <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="mt-1 text-xs text-[#829087]">{hint}</p>
+        <p className="mt-1 text-xs text-[#5E6B61]">{hint}</p>
       </div>
       {children.length === 0 ? (
-        <p className="px-6 py-5 text-sm text-[#829087]">{empty}</p>
+        <p className="px-6 py-5 text-sm text-[#5E6B61]">{empty}</p>
       ) : (
         <ul>{children}</ul>
       )}
@@ -145,14 +145,14 @@ export default function FollowUpsPage() {
 
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-[#242A26]">{step.description}</p>
-        <p className="mt-1 text-xs text-[#829087]">
+        <p className="mt-1 text-xs text-[#5E6B61]">
           {donorLink(step.donor_id, step.donor_name)}
         </p>
       </div>
 
       <div
         className={`flex shrink-0 items-center gap-2 text-xs ${
-          overdue ? "font-semibold text-[#9A3B2E]" : "text-[#718274]"
+          overdue ? "font-semibold text-[#9A3B2E]" : "text-[#5E6B61]"
         }`}
       >
         <CalendarDays size={15} aria-hidden="true" />
@@ -167,11 +167,11 @@ export default function FollowUpsPage() {
       {/* Heading */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor relationships / Reminders
           </p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">Your next steps.</h2>
-          <p className="mt-3 text-sm text-[#788279]">
+          <p className="mt-3 text-sm text-[#5E6B61]">
             Everything you owe your donors this week, overdue first.
           </p>
         </div>
@@ -191,7 +191,7 @@ export default function FollowUpsPage() {
           Couldn't load your follow-ups: {result.error}
         </div>
       ) : loading || !queue ? (
-        <p role="status" className="text-sm text-[#788279]">Loading your follow-ups…</p>
+        <p role="status" className="text-sm text-[#5E6B61]">Loading your follow-ups…</p>
       ) : (
         <>
           {/* Statistics */}
@@ -203,7 +203,7 @@ export default function FollowUpsPage() {
               { label: "No contact in 90 days", value: queue.counts.quarterly_owed },
             ].map((stat) => (
               <div key={stat.label} className="border border-[#D8DED4] bg-[#FBF9F3] p-6">
-                <p className="text-xs text-[#829087]">{stat.label}</p>
+                <p className="text-xs text-[#5E6B61]">{stat.label}</p>
                 <p
                   className={`mt-4 font-display text-4xl ${
                     stat.alert ? "text-[#9A3B2E]" : "text-[#183E32]"
@@ -247,7 +247,7 @@ export default function FollowUpsPage() {
                       {d.kind.replace(/_/g, " ")}
                       {d.channel ? ` · ${d.channel}` : ""}
                     </p>
-                    <p className="mt-1 text-xs text-[#829087]">
+                    <p className="mt-1 text-xs text-[#5E6B61]">
                       {donorLink(d.donor_id, d.donor_name)}
                     </p>
                   </div>
@@ -370,7 +370,7 @@ export default function FollowUpsPage() {
               >
                 {saving ? "Saving…" : "Save follow-up"}
               </button>
-              <p className="text-xs text-[#829087]">
+              <p className="text-xs text-[#5E6B61]">
                 Follow-ups due more than a week out appear here once they're within 7 days, and
                 always on the donor's page.
               </p>

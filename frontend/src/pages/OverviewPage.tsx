@@ -36,14 +36,14 @@ function Tile({
 }) {
   const body = (
     <>
-      <p className="flex items-center justify-between text-xs text-[#829087]">
+      <p className="flex items-center justify-between text-xs text-[#5E6B61]">
         {label}
         {to && <ArrowUpRight size={15} className="text-[#52705D]" aria-hidden="true" />}
       </p>
       <p className={`mt-3 font-display text-4xl ${alert ? "text-[#9A3B2E]" : "text-[#183E32]"}`}>
         {value}
       </p>
-      {note && <p className="mt-2 text-xs text-[#829087]">{note}</p>}
+      {note && <p className="mt-2 text-xs text-[#5E6B61]">{note}</p>}
     </>
   );
   const cls = "block border border-[#D8DED4] bg-[#FBF9F3] p-6";
@@ -103,13 +103,13 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+        <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
           Coding in Color / Overview
         </p>
         <h2 className="mt-3 font-display text-5xl text-[#183E32]">
           {me ? `Welcome back, ${me.name.split(" ")[0]}.` : "Welcome back."}
         </h2>
-        <p className="mt-3 text-sm text-[#788279]">
+        <p className="mt-3 text-sm text-[#5E6B61]">
           {isStaff
             ? "Donor health and board outreach, at a glance."
             : "Your donors and what you owe them this week."}
@@ -117,7 +117,7 @@ export default function OverviewPage() {
       </div>
 
       {!data ? (
-        <p role="status" className="text-sm text-[#788279]">Loading…</p>
+        <p role="status" className="text-sm text-[#5E6B61]">Loading…</p>
       ) : (
         <>
           {data.errors.length > 0 && (
@@ -160,7 +160,7 @@ export default function OverviewPage() {
             <section aria-labelledby="giving-heading" className="space-y-4">
               <h3 id="giving-heading" className="text-sm font-semibold">
                 {isStaff ? `Giving in ${sel.year}` : `Your donors in ${sel.year}`}
-                {sel.in_progress && <span className="font-normal text-[#829087]"> (so far)</span>}
+                {sel.in_progress && <span className="font-normal text-[#5E6B61]"> (so far)</span>}
               </h3>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <Tile label="Raised" value={formatMoney(sel.total_raised)} note={`${sel.donors_giving} donors gave`} />
@@ -197,7 +197,7 @@ export default function OverviewPage() {
                   <h3 id="board-heading" className="text-sm font-semibold">
                     Board outreach, last 90 days
                   </h3>
-                  <p className="mt-1 text-xs text-[#829087]">
+                  <p className="mt-1 text-xs text-[#5E6B61]">
                     Who has reached their donors. Least contacted first: who needs a nudge.
                   </p>
                 </div>
@@ -216,11 +216,11 @@ export default function OverviewPage() {
               )}
 
               {board.members.length === 0 ? (
-                <p className="px-6 py-5 text-sm text-[#829087]">No active board members yet.</p>
+                <p className="px-6 py-5 text-sm text-[#5E6B61]">No active board members yet.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[640px] text-left text-sm">
-                    <thead className="text-xs text-[#6F8172]">
+                    <thead className="text-xs text-[#5E6B61]">
                       <tr>
                         <th scope="col" className="px-6 py-3 font-semibold">Board member</th>
                         <th scope="col" className="px-6 py-3 font-semibold">Donors contacted</th>
@@ -246,7 +246,7 @@ export default function OverviewPage() {
                               <span className="tabular-nums">
                                 {m.touched_90d} of {m.donors}
                                 {m.touched_pct != null && (
-                                  <span className="text-[#829087]"> ({m.touched_pct}%)</span>
+                                  <span className="text-[#5E6B61]"> ({m.touched_pct}%)</span>
                                 )}
                               </span>
                             </div>
@@ -300,7 +300,7 @@ export default function OverviewPage() {
               </Link>
             ))}
           </nav>
-          <p className="text-xs text-[#829087]">Figures for {year} update as gifts are imported.</p>
+          <p className="text-xs text-[#5E6B61]">Figures for {year} update as gifts are imported.</p>
         </>
       )}
     </div>

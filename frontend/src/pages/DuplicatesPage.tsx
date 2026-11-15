@@ -86,7 +86,7 @@ function PairCard({
         <p className="text-sm text-[#5E6B61]">
           Flagged because: <span className="font-semibold text-[#242A26]">{pair.reason}</span>
         </p>
-        <span className="text-xs tabular-nums text-[#829087]">
+        <span className="text-xs tabular-nums text-[#5E6B61]">
           Match score {Math.round(pair.score)} / 100
         </span>
       </div>
@@ -118,6 +118,7 @@ function PairCard({
                       type="radio"
                       name={`keep-${pair.id}`}
                       checked={kept}
+                      aria-label={`Keep ${d.display_name} (donor #${d.id})`}
                       onChange={() => setKeepId(d.id)}
                       className="accent-[#183E32]"
                     />
@@ -130,7 +131,7 @@ function PairCard({
                     const differs = f.value(d) !== f.value(other);
                     return (
                       <div key={f.label} className="flex justify-between gap-4">
-                        <dt className="text-[#829087]">{f.label}</dt>
+                        <dt className="text-[#5E6B61]">{f.label}</dt>
                         <dd
                           className={`text-right break-all ${
                             differs ? "font-semibold text-[#242A26]" : "text-[#5E6B61]"
@@ -170,7 +171,7 @@ function PairCard({
         >
           Not a duplicate
         </button>
-        <p className="text-xs text-[#829087]">
+        <p className="text-xs text-[#5E6B61]">
           Bold fields differ. Blank contact details on the kept record are filled from the other.
         </p>
       </div>
@@ -208,7 +209,7 @@ export default function DuplicatesPage() {
 
   if (me && me.role !== "admin") {
     return (
-      <p className="text-sm text-[#788279]">
+      <p className="text-sm text-[#5E6B61]">
         Only the CEO / admin can review duplicates.
       </p>
     );
@@ -218,11 +219,11 @@ export default function DuplicatesPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor data / Duplicate review
           </p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">One donor, one record.</h2>
-          <p className="mt-3 max-w-2xl text-sm text-[#788279]">
+          <p className="mt-3 max-w-2xl text-sm text-[#5E6B61]">
             Imports merge exact email matches on their own. These pairs share a phone number or
             have very similar names, so a person decides. Two different Maria Garcias are common.
           </p>
@@ -246,9 +247,9 @@ export default function DuplicatesPage() {
           Couldn't load duplicates: {result.error}
         </div>
       ) : !data || !me ? (
-        <p role="status" className="text-sm text-[#788279]">Loading…</p>
+        <p role="status" className="text-sm text-[#5E6B61]">Loading…</p>
       ) : pairs.length === 0 ? (
-        <p className="border border-[#D8DED4] bg-[#FBF9F3] p-8 text-sm text-[#829087]">
+        <p className="border border-[#D8DED4] bg-[#FBF9F3] p-8 text-sm text-[#5E6B61]">
           Nothing to review. New possible duplicates appear here after each import.
         </p>
       ) : (

@@ -83,7 +83,7 @@ export default function DashboardLayout() {
             </button>
 
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#829087]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-[#5E6B61]">
                 {roleNames[currentRole]}
               </p>
 

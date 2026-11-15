@@ -118,7 +118,7 @@ export default function NextStepCell({
               setAdding(false);
               setError("");
             }}
-            className="cursor-pointer px-2 py-2 text-xs text-[#6F8172] hover:text-[#183E32]"
+            className="cursor-pointer px-2 py-2 text-xs text-[#5E6B61] hover:text-[#183E32]"
           >
             Cancel
           </button>
@@ -129,7 +129,7 @@ export default function NextStepCell({
   }
 
   if (!step) {
-    if (!active) return <span className="text-xs text-[#9AA59C]">—</span>;
+    if (!active) return <span className="text-xs text-[#5E6B61]">—</span>;
     return (
       <div>
         <button
@@ -165,14 +165,14 @@ export default function NextStepCell({
         </p>
         <p
           className={`mt-1 flex items-center gap-1 text-xs ${
-            overdue ? "font-semibold text-[#9A3B2E]" : "text-[#718274]"
+            overdue ? "font-semibold text-[#9A3B2E]" : "text-[#5E6B61]"
           }`}
         >
           <CalendarDays size={13} aria-hidden="true" />
           {overdue ? "Overdue · " : ""}
           {formatDate(step.due_date)}
           {steps.length > 1 && (
-            <span className="ml-1 font-normal text-[#819083]">
+            <span className="ml-1 font-normal text-[#5E6B61]">
               · +{steps.length - 1} more
             </span>
           )}

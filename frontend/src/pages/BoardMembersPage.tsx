@@ -45,11 +45,11 @@ export default function BoardMembersPage() {
       {/* Page Heading */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Team / Board members
           </p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">Board members.</h2>
-          <p className="mt-3 text-sm text-[#788279]">
+          <p className="mt-3 text-sm text-[#5E6B61]">
             Donation totals from each member's donors. Click a member to see their donors and
             retention.
           </p>
@@ -69,8 +69,8 @@ export default function BoardMembersPage() {
       </div>
 
       {/* Search */}
-      <div className="flex min-w-[220px] items-center gap-3 border border-[#CDD5CB] bg-[#FBF9F3] px-4">
-        <Search size={18} className="text-[#7F9082]" />
+      <div className="flex min-w-[220px] items-center gap-3 border border-[#CDD5CB] bg-[#FBF9F3] px-4 focus-within:border-[#183E32] focus-within:outline-2 focus-within:outline-[#183E32]">
+        <Search size={18} className="text-[#5E6B61]" />
         <input
           type="search"
           placeholder="Search by name..."
@@ -88,14 +88,14 @@ export default function BoardMembersPage() {
             Couldn't load board members: {error}
           </div>
         ) : loading ? (
-          <div role="status" className="p-12 text-center text-sm text-[#819083]">
+          <div role="status" className="p-12 text-center text-sm text-[#5E6B61]">
             Loading board members…
           </div>
         ) : (
           <>
             <table className="w-full min-w-[650px] text-left">
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-                <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+                <tr className="text-[11px] uppercase tracking-wider text-[#5E6B61]">
                   <th className="px-6 py-4 font-semibold">Member</th>
                   <th className="px-6 py-4 font-semibold">Donors</th>
                   <th className="px-6 py-4 font-semibold">Total raised</th>
@@ -122,7 +122,7 @@ export default function BoardMembersPage() {
                     <td className="px-6 py-5 text-sm tabular-nums">{m.donors}</td>
                     <td className="px-6 py-5 text-sm font-semibold text-[#183E32] tabular-nums">
                       {formatMoney(m.total_raised)}
-                      <span className="ml-2 text-xs font-normal text-[#819083]">
+                      <span className="ml-2 text-xs font-normal text-[#5E6B61]">
                         {m.gift_count} {m.gift_count === 1 ? "gift" : "gifts"}
                       </span>
                     </td>
@@ -143,7 +143,7 @@ export default function BoardMembersPage() {
             </table>
 
             {filtered.length === 0 && (
-              <div className="p-12 text-center text-sm text-[#819083]">
+              <div className="p-12 text-center text-sm text-[#5E6B61]">
                 {members.length === 0
                   ? "No board members yet."
                   : "No board members match your search."}

@@ -104,11 +104,11 @@ export default function ImportsPage() {
     <div className="space-y-8">
       {/* Heading */}
       <div>
-        <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+        <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
           Donor data / Imports
         </p>
         <h2 className="mt-3 font-display text-5xl text-[#183E32]">Import donors.</h2>
-        <p className="mt-3 max-w-2xl text-sm text-[#788279]">
+        <p className="mt-3 max-w-2xl text-sm text-[#5E6B61]">
           Upload an export to bring donors and gifts into one list. You'll see a preview
           first, and nothing is saved until you confirm. Uploading the same file twice is
           safe: rows that were already imported are skipped.
@@ -142,7 +142,7 @@ export default function ImportsPage() {
                   className="sr-only"
                 />
                 <span className="block text-sm font-semibold text-[#242A26]">{s.label}</span>
-                <span className="mt-1 block text-xs text-[#829087]">{s.hint}</span>
+                <span className="mt-1 block text-xs text-[#5E6B61]">{s.hint}</span>
               </label>
             ))}
           </div>
@@ -219,7 +219,7 @@ export default function ImportsPage() {
           <div className="grid gap-4 sm:grid-cols-4">
             {KEY_STATS.map((k) => (
               <div key={k} className="border border-[#E0E4DB] p-4">
-                <p className="text-xs text-[#829087]">{label(k)}</p>
+                <p className="text-xs text-[#5E6B61]">{label(k)}</p>
                 <p className="mt-2 font-display text-3xl text-[#183E32]">
                   {(result.summary[k] ?? 0).toLocaleString()}
                 </p>
@@ -229,7 +229,7 @@ export default function ImportsPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
-              <h4 className="mb-2 text-xs uppercase tracking-wider text-[#6F8172]">
+              <h4 className="mb-2 text-xs uppercase tracking-wider text-[#5E6B61]">
                 {step === "done" ? "What was saved" : "Details"}
               </h4>
               {step === "done" && result.saved ? (
@@ -240,7 +240,7 @@ export default function ImportsPage() {
             </div>
 
             <div>
-              <h4 className="mb-2 text-xs uppercase tracking-wider text-[#6F8172]">
+              <h4 className="mb-2 text-xs uppercase tracking-wider text-[#5E6B61]">
                 Columns used
               </h4>
               <dl className="divide-y divide-[#E0E4DB]">
@@ -252,7 +252,7 @@ export default function ImportsPage() {
                 ))}
               </dl>
               {result.columns_ignored.length > 0 && (
-                <p className="mt-2 text-xs text-[#829087]">
+                <p className="mt-2 text-xs text-[#5E6B61]">
                   Ignored: {result.columns_ignored.join(", ")}
                 </p>
               )}
@@ -273,7 +273,7 @@ export default function ImportsPage() {
                 {result.summary.rows_skipped ?? result.skipped.length} rows skipped: see why
               </summary>
               <table className="mt-3 w-full text-left text-xs">
-                <thead className="text-[#6F8172]">
+                <thead className="text-[#5E6B61]">
                   <tr>
                     <th className="py-1 pr-4 font-semibold">Line in file</th>
                     <th className="py-1 font-semibold">Reason</th>

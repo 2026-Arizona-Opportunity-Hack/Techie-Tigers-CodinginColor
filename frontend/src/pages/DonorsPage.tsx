@@ -88,7 +88,7 @@ export default function DonorsPage() {
       {/* Page Heading */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor management / Directory
           </p>
 
@@ -96,7 +96,7 @@ export default function DonorsPage() {
             {role === "board" ? "My donors." : "All donors."}
           </h2>
 
-          <p className="mt-3 text-sm text-[#788279]">
+          <p className="mt-3 text-sm text-[#5E6B61]">
             View relationships, giving history, and outreach.
           </p>
         </div>
@@ -111,8 +111,8 @@ export default function DonorsPage() {
 
       {/* Search and filters */}
       <div className="flex flex-wrap gap-4">
-        <div className="flex min-w-[220px] flex-1 items-center gap-3 border border-[#CDD5CB] bg-[#FBF9F3] px-4">
-          <Search size={18} className="text-[#7F9082]" />
+        <div className="flex min-w-[220px] flex-1 items-center gap-3 border border-[#CDD5CB] bg-[#FBF9F3] px-4 focus-within:border-[#183E32] focus-within:outline-2 focus-within:outline-[#183E32]">
+          <Search size={18} className="text-[#5E6B61]" />
 
           <input
             type="search"
@@ -164,7 +164,7 @@ export default function DonorsPage() {
             Couldn't load donors: {error}
           </div>
         ) : loading ? (
-          <div role="status" className="p-12 text-center text-sm text-[#819083]">
+          <div role="status" className="p-12 text-center text-sm text-[#5E6B61]">
             Loading donors…
           </div>
         ) : (
@@ -173,7 +173,7 @@ export default function DonorsPage() {
               className={`w-full text-left ${isBoard ? "min-w-[1080px]" : "min-w-[820px]"}`}
             >
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
-                <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
+                <tr className="text-[11px] uppercase tracking-wider text-[#5E6B61]">
                   <th className="px-6 py-4 font-semibold">Donor</th>
                   <th className="px-6 py-4 font-semibold">Type</th>
                   {role !== "board" && (
@@ -208,7 +208,7 @@ export default function DonorsPage() {
                       <p className="text-sm font-semibold text-[#242A26]">
                         {donor.display_name}
                       </p>
-                      <p className="mt-1 text-xs text-[#819083]">
+                      <p className="mt-1 text-xs text-[#5E6B61]">
                         {donor.email ?? "No email"}
                       </p>
                     </td>
@@ -225,7 +225,7 @@ export default function DonorsPage() {
 
                     <td className="px-6 py-5 text-sm font-semibold text-[#183E32]">
                       {formatMoney(donor.lifetime_total)}
-                      <span className="ml-2 text-xs font-normal text-[#819083]">
+                      <span className="ml-2 text-xs font-normal text-[#5E6B61]">
                         {donor.gift_count} {donor.gift_count === 1 ? "gift" : "gifts"}
                       </span>
                     </td>
@@ -271,7 +271,7 @@ export default function DonorsPage() {
             </table>
 
             {filteredDonors.length === 0 && (
-              <div className="p-12 text-center text-sm text-[#819083]">
+              <div className="p-12 text-center text-sm text-[#5E6B61]">
                 {donors.length === 0
                   ? "No donors yet. Import a spreadsheet, Zeffy, or Benevity export to get started."
                   : "No donors match your search."}

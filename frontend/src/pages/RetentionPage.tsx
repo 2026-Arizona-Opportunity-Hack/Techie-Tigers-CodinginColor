@@ -26,9 +26,9 @@ const statusLabel = retentionLabel;
 function Tile({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
     <div className="border border-[#D8DED4] bg-[#FBF9F3] p-6">
-      <p className="text-xs text-[#829087]">{label}</p>
+      <p className="text-xs text-[#5E6B61]">{label}</p>
       <p className="mt-3 font-display text-4xl text-[#183E32]">{value}</p>
-      {note && <p className="mt-2 text-xs text-[#829087]">{note}</p>}
+      {note && <p className="mt-2 text-xs text-[#5E6B61]">{note}</p>}
     </div>
   );
 }
@@ -57,7 +57,7 @@ function YearBar({ y, max }: { y: RetentionYear; max: number }) {
           />
         ))}
       </div>
-      <span className="text-right text-xs tabular-nums text-[#829087]">{total}</span>
+      <span className="text-right text-xs tabular-nums text-[#5E6B61]">{total}</span>
     </div>
   );
 }
@@ -89,11 +89,11 @@ export default function RetentionPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#829087]">
+          <p className="text-xs uppercase tracking-[0.18em] text-[#5E6B61]">
             Donor health / Retention
           </p>
           <h2 className="mt-3 font-display text-5xl text-[#183E32]">Who kept giving.</h2>
-          <p className="mt-3 max-w-2xl text-sm text-[#788279]">
+          <p className="mt-3 max-w-2xl text-sm text-[#5E6B61]">
             Year over year: who is new, who gave more or less, and who stopped.
             {role === "board" && " Showing your donors only."}
           </p>
@@ -125,9 +125,9 @@ export default function RetentionPage() {
           Couldn't load retention: {result.error}
         </div>
       ) : !data ? (
-        <p role="status" className="text-sm text-[#788279]">Loading retention…</p>
+        <p role="status" className="text-sm text-[#5E6B61]">Loading retention…</p>
       ) : !sel ? (
-        <p className="border border-[#D8DED4] bg-[#FBF9F3] p-8 text-sm text-[#829087]">
+        <p className="border border-[#D8DED4] bg-[#FBF9F3] p-8 text-sm text-[#5E6B61]">
           No gifts yet. Import donor exports to see retention.
         </p>
       ) : (
@@ -173,7 +173,7 @@ export default function RetentionPage() {
               <h3 id="chart-heading" className="text-sm font-semibold">
                 Donors by year
               </h3>
-              <p className="mt-1 text-xs text-[#829087]">
+              <p className="mt-1 text-xs text-[#5E6B61]">
                 Each bar is every donor who gave that year or the year before. Hover a
                 segment for its count.
               </p>
@@ -205,7 +205,7 @@ export default function RetentionPage() {
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full min-w-[560px] text-left text-xs">
                   <caption className="sr-only">Donors by retention status and year</caption>
-                  <thead className="text-[#6F8172]">
+                  <thead className="text-[#5E6B61]">
                     <tr>
                       <th scope="col" className="py-2 pr-4 font-semibold">Year</th>
                       {RETENTION_STATUSES.map((s) => (
@@ -248,16 +248,16 @@ export default function RetentionPage() {
                   <Phone size={16} className="text-[#52705D]" aria-hidden="true" />
                   {sel.in_progress ? "Call before December 31" : `Lapsed in ${sel.year}`}
                 </h3>
-                <p className="mt-1 text-xs text-[#829087]">
+                <p className="mt-1 text-xs text-[#5E6B61]">
                   Gave in {sel.year - 1}, not {sel.in_progress ? "yet " : ""}in {sel.year}. Biggest
                   first.
                 </p>
               </div>
               {data.call_list.length === 0 ? (
-                <p className="px-6 py-5 text-sm text-[#829087]">Nobody lapsed. 🎉</p>
+                <p className="px-6 py-5 text-sm text-[#5E6B61]">Nobody lapsed. 🎉</p>
               ) : (
                 <table className="w-full text-left text-sm">
-                  <thead className="text-xs text-[#6F8172]">
+                  <thead className="text-xs text-[#5E6B61]">
                     <tr>
                       <th scope="col" className="px-6 py-3 font-semibold">Donor</th>
                       <th scope="col" className="px-6 py-3 text-right font-semibold">
@@ -298,12 +298,12 @@ export default function RetentionPage() {
                   <h3 id="owner-heading" className="text-sm font-semibold">
                     By board member, {sel.year}
                   </h3>
-                  <p className="mt-1 text-xs text-[#829087]">
+                  <p className="mt-1 text-xs text-[#5E6B61]">
                     Whose donors are slipping? Most lapsed first.
                   </p>
                 </div>
                 <table className="w-full text-left text-sm">
-                  <thead className="text-xs text-[#6F8172]">
+                  <thead className="text-xs text-[#5E6B61]">
                     <tr>
                       <th scope="col" className="px-6 py-3 font-semibold">Owner</th>
                       <th scope="col" className="px-6 py-3 text-right font-semibold">Retention</th>
