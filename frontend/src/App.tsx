@@ -6,12 +6,12 @@ import {
   Routes,
   Route,
   Navigate,
+  useParams,
 } from "react-router-dom";
 
 import OutreachPage from "./pages/OutreachPage.tsx";
 import Login from "./pages/Login";
 import DashboardLayout from "./components/DashboardLayout";
-import DashboardPage from "./pages/DashboardPage";
 import DonorsPage from "./pages/DonorsPage.tsx";
 import DonorDetails from "./pages/DonorDetails";
 import FollowUpsPage from "./pages/FollowUpsPage";
@@ -22,6 +22,13 @@ import DuplicatesPage from "./pages/DuplicatesPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
 import BoardMembersPage from "./pages/BoardMembersPage";
 import BoardMemberPage from "./pages/BoardMemberPage";
+
+// Absolute on purpose: a relative "overview" inside a "*" route would resolve
+// to /board/history/overview and redirect forever.
+function ToOverview() {
+  const { role } = useParams();
+  return <Navigate to={`/${role}/overview`} replace />;
+}
 
 export default function App() {
   return (
@@ -113,10 +120,10 @@ export default function App() {
             element={<ApiKeysPage />}
           />
 
-          {/* Other Dashboard Sections */}
+          {/* Unknown or old links (e.g. /board/history) go to the Overview */}
           <Route
-            path=":section"
-            element={<DashboardPage />}
+            path="*"
+            element={<ToOverview />}
           />
         </Route>
 
