@@ -66,3 +66,75 @@ export type Me = {
 };
 
 export const getMe = () => apiFetch<Me>("/me");
+
+// ---- Donors (backend/app/routers/donors.py) ----
+export type Donor = {
+  id: number;
+  first_name: string | null;
+  last_name: string | null;
+  organization_name: string | null;
+  email: string | null;
+  phone: string | null;
+  donor_type: "individual" | "funder";
+  owner_id: string | null;
+  owner_name: string | null;
+  active: boolean;
+  last_thanked_at: string | null;
+  display_name: string;
+  lifetime_total: number;
+  gift_count: number;
+  last_gift_date: string | null;
+};
+
+export type TimelineItem = {
+  type: "gift" | "message" | "next_step";
+  id: number;
+  date: string | null;
+  title: string;
+  detail?: string; // gifts: source · campaign · program
+  status?: string; // messages: draft | sent | skipped
+  by?: string; // messages: who sent it
+  subject?: string | null;
+  body?: string | null;
+  done?: boolean; // next steps
+  assigned_to?: string | null;
+  event?: { name: string; event_date: string } | null;
+};
+
+export type DonorTimeline = {
+  donor: Donor;
+  open: TimelineItem[]; // drafts and unfinished to-dos, soonest first
+  history: TimelineItem[]; // gifts, sent messages, finished to-dos, newest first
+};
+
+export type ContactLinks = {
+  gmail?: string;
+  mailto?: string;
+  sms?: string;
+  call?: string;
+};
+
+// The backend limits board members to their own donors (row-level security).
+export const getDonors = () => apiFetch<Donor[]>("/donors?limit=500");
+export const getDonorTimeline = (id: number) =>
+  apiFetch<DonorTimeline>(`/donors/${id}/timeline`);
+export const getContactLinks = (id: number) =>
+  apiFetch<ContactLinks>(`/donors/${id}/contact-links`);
+
+// ---- Display helpers ----
+export function formatMoney(amount: number): string {
+  return amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  });
+}
+
+// "2026-10-15" or an ISO timestamp -> "Oct 15, 2026"
+export function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value.length === 10 ? `${value}T00:00:00` : value);
+  return Number.isNaN(d.getTime())
+    ? value
+    : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
