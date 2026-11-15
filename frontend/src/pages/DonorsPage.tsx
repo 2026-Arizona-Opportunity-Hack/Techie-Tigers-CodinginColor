@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowUpRight, Search, Users } from "lucide-react";
 
-import { getDonors, formatMoney, type Donor } from "../lib/api";
+import RetentionBadge from "../components/RetentionBadge";
+import {
+  getDonors,
+  getRetentionStatuses,
+  formatMoney,
+  RETENTION_STATUSES,
+  type Donor,
+  type RetentionStatus,
+} from "../lib/api";
+import { retentionLabel } from "../lib/retentionStyle";
 
 export default function DonorsPage() {
   const { role } = useParams();
@@ -13,14 +22,19 @@ export default function DonorsPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [retention, setRetention] = useState<Map<number, RetentionStatus>>(new Map());
+  const [retentionFilter, setRetentionFilter] = useState("all");
 
   // The backend decides which donors come back: board members only get
   // their own, staff get everyone. No filtering by role happens here.
   useEffect(() => {
     let cancelled = false;
-    getDonors()
-      .then((rows) => {
-        if (!cancelled) setDonors(rows);
+    // Retention labels are a nice-to-have: if they fail, the list still loads.
+    Promise.all([getDonors(), getRetentionStatuses().catch(() => new Map())])
+      .then(([rows, statuses]) => {
+        if (cancelled) return;
+        setDonors(rows);
+        setRetention(statuses);
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err.message);
@@ -40,7 +54,9 @@ export default function DonorsPage() {
       donor.display_name.toLowerCase().includes(query) ||
       (donor.email ?? "").toLowerCase().includes(query);
     const matchesType = filter === "all" || donor.donor_type === filter;
-    return matchesSearch && matchesType;
+    const status = retention.get(donor.id) ?? "none";
+    const matchesRetention = retentionFilter === "all" || status === retentionFilter;
+    return matchesSearch && matchesType && matchesRetention;
   });
 
   const openDonor = (id: number) => navigate(`/${role}/donors/${id}`);
@@ -96,6 +112,21 @@ export default function DonorsPage() {
           <option value="individual">Individuals</option>
           <option value="funder">Funders</option>
         </select>
+
+        <select
+          value={retentionFilter}
+          onChange={(e) => setRetentionFilter(e.target.value)}
+          aria-label="Filter donors by this year's giving"
+          className="border border-[#CDD5CB] bg-[#FBF9F3] px-5 py-3 text-sm outline-none"
+        >
+          <option value="all">All giving</option>
+          {RETENTION_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {retentionLabel(s, true)}
+            </option>
+          ))}
+          <option value="none">No gift this year or last</option>
+        </select>
       </div>
 
       {/* Donor Table */}
@@ -110,7 +141,7 @@ export default function DonorsPage() {
           </div>
         ) : (
           <>
-            <table className="w-full min-w-[650px] text-left">
+            <table className="w-full min-w-[820px] text-left">
               <thead className="border-b border-[#D8DED4] bg-[#EDF0E8]">
                 <tr className="text-[11px] uppercase tracking-wider text-[#6F8172]">
                   <th className="px-6 py-4 font-semibold">Donor</th>
@@ -119,6 +150,9 @@ export default function DonorsPage() {
                     <th className="px-6 py-4 font-semibold">Owner</th>
                   )}
                   <th className="px-6 py-4 font-semibold">Total given</th>
+                  <th className="px-6 py-4 font-semibold">
+                    {new Date().getFullYear()} giving
+                  </th>
                   <th className="px-6 py-4 font-semibold">Status</th>
                   <th className="px-6 py-4 font-semibold">
                     <span className="sr-only">Open</span>
@@ -161,6 +195,14 @@ export default function DonorsPage() {
                       <span className="ml-2 text-xs font-normal text-[#819083]">
                         {donor.gift_count} {donor.gift_count === 1 ? "gift" : "gifts"}
                       </span>
+                    </td>
+
+                    <td className="px-6 py-5">
+                      <RetentionBadge
+                        status={retention.get(donor.id)}
+                        lastGiftDate={donor.last_gift_date}
+                        giftCount={donor.gift_count}
+                      />
                     </td>
 
                     <td className="px-6 py-5">

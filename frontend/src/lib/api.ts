@@ -325,3 +325,19 @@ export type RetentionReport = {
 export const getRetention = (year?: number) =>
   apiFetch<RetentionReport>(`/reports/retention${year ? `?year=${year}` : ""}`);
 
+// Each donor's retention status for one year, read straight from the
+// donor_retention view with the user's own login. Row-level security applies,
+// so board members only get their own donors. Donors with no gift this year or
+// last year have no row.
+export async function getRetentionStatuses(
+  year = new Date().getFullYear()
+): Promise<Map<number, RetentionStatus>> {
+  const { data, error } = await supabase
+    .from("donor_retention")
+    .select("donor_id, status")
+    .eq("year", year);
+  if (error) throw new ApiError(0, error.message);
+  return new Map(
+    (data as { donor_id: number; status: RetentionStatus }[]).map((r) => [r.donor_id, r.status])
+  );
+}
