@@ -14,6 +14,14 @@ router = APIRouter(prefix="/communications", tags=["communications"])
 Kind = Literal["thank_you", "quarterly", "follow_up", "update", "event_invite", "other"]
 
 
+def can_send(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Fundraising staff can read donors and history but not draft or send
+    anything. Everyone else (CEO, board members) can."""
+    if user.role == "fundraising":
+        raise HTTPException(403, "Fundraising can't draft or send messages")
+    return user
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -27,7 +35,7 @@ class LogIn(BaseModel):
 
 
 @router.post("/log", status_code=201)
-def log_outreach(body: LogIn, user: CurrentUser = Depends(get_current_user)):
+def log_outreach(body: LogIn, user: CurrentUser = Depends(can_send)):
     try:
         res = user.db.table("communications").insert({
             **body.model_dump(),
@@ -81,7 +89,7 @@ class ThankYouIn(BaseModel):
 
 
 @router.post("/thank-you", status_code=201)
-def draft_thank_you(body: ThankYouIn, user: CurrentUser = Depends(get_current_user)):
+def draft_thank_you(body: ThankYouIn, user: CurrentUser = Depends(can_send)):
     try:
         draft = create_thank_you_draft(user.db, body.gift_id, user_id=user.id)
     except APIError as e:
@@ -97,7 +105,7 @@ class QuarterlyIn(BaseModel):
 
 
 @router.post("/quarterly", status_code=201)
-def draft_quarterly(body: QuarterlyIn, user: CurrentUser = Depends(get_current_user)):
+def draft_quarterly(body: QuarterlyIn, user: CurrentUser = Depends(can_send)):
     """Draft a quarterly update for one donor, pre-filled from the same template
     as the CEO's bulk job. Any role that can see the donor may ask (RLS limits
     board members to their own donors). If a quarterly draft is already waiting
@@ -140,7 +148,7 @@ class AIUpdateIn(BaseModel):
 
 
 @router.post("/ai-update", status_code=201)
-def draft_ai_update(body: AIUpdateIn, user: CurrentUser = Depends(get_current_user)):
+def draft_ai_update(body: AIUpdateIn, user: CurrentUser = Depends(can_send)):
     """P1: an AI-written update from this donor's gift history and the outcomes of
     the programs they funded. Saved as a draft (ai_generated = true); a person
     reviews, edits and sends it. If AI is off or fails, the quarterly template is
@@ -194,7 +202,7 @@ class DraftEdit(BaseModel):
 
 
 @router.patch("/{cid}")
-def edit_draft(cid: int, body: DraftEdit, user: CurrentUser = Depends(get_current_user)):
+def edit_draft(cid: int, body: DraftEdit, user: CurrentUser = Depends(can_send)):
     changes = body.model_dump(exclude_unset=True)
     # Editing a system draft claims it: RLS requires user_id = you on any update
     res = (user.db.table("communications").update({**changes, "user_id": user.id})
@@ -205,7 +213,7 @@ def edit_draft(cid: int, body: DraftEdit, user: CurrentUser = Depends(get_curren
 
 
 @router.get("/{cid}/links")
-def draft_links(cid: int, user: CurrentUser = Depends(get_current_user)):
+def draft_links(cid: int, user: CurrentUser = Depends(can_send)):
     c = get_comm_or_404(user.db, cid)
     d = c["donors"]
     if c["status"] != "draft":
@@ -220,7 +228,7 @@ def draft_links(cid: int, user: CurrentUser = Depends(get_current_user)):
 
 
 @router.post("/{cid}/mark-sent")
-def mark_sent(cid: int, user: CurrentUser = Depends(get_current_user)):
+def mark_sent(cid: int, user: CurrentUser = Depends(can_send)):
     c = get_comm_or_404(user.db, cid)
     if c["status"] != "draft":
         raise HTTPException(400, "Already sent or skipped")
@@ -241,7 +249,7 @@ def mark_sent(cid: int, user: CurrentUser = Depends(get_current_user)):
 
 
 @router.post("/{cid}/skip")
-def skip(cid: int, user: CurrentUser = Depends(get_current_user)):
+def skip(cid: int, user: CurrentUser = Depends(can_send)):
     res = (user.db.table("communications")
            .update({"status": "skipped", "user_id": user.id})
            .eq("id", cid).eq("status", "draft").execute())

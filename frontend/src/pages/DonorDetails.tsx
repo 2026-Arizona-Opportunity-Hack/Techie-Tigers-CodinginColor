@@ -175,6 +175,8 @@ export default function DonorDetails() {
     auth.status === "ready" && (auth.role === "admin" || auth.role === "fundraising");
   // Only the CEO assigns owners (the backend and database enforce this too).
   const canReassign = auth.status === "ready" && auth.role === "admin";
+  // Fundraising can look but not draft or send anything (the backend enforces this too).
+  const canSend = auth.status === "ready" && auth.role !== "fundraising";
   // Bumped after a reassignment to reload the donor and its timeline.
   const [version, setVersion] = useState(0);
 
@@ -321,11 +323,13 @@ export default function DonorDetails() {
     if (match.length > 0) return "Thank-you drafted";
     return null;
   };
-  const contactButtons = [
-    { label: "Email", href: links.gmail, icon: Mail, newTab: true },
-    { label: "Text", href: links.sms, icon: MessageSquare, newTab: false },
-    { label: "Call", href: links.call, icon: Phone, newTab: false },
-  ].filter((b) => b.href);
+  const contactButtons = canSend
+    ? [
+        { label: "Email", href: links.gmail, icon: Mail, newTab: true },
+        { label: "Text", href: links.sms, icon: MessageSquare, newTab: false },
+        { label: "Call", href: links.call, icon: Phone, newTab: false },
+      ].filter((b) => b.href)
+    : [];
 
   return (
     <div className="space-y-8">
@@ -369,7 +373,7 @@ export default function DonorDetails() {
           )}
         </div>
 
-        {(contactButtons.length > 0 || donor.active) && (
+        {canSend && (contactButtons.length > 0 || donor.active) && (
           <div className="flex flex-wrap gap-2">
             {donor.active && (donor.email || donor.phone) && (
               <>
@@ -463,7 +467,7 @@ export default function DonorDetails() {
                       >
                         {thankedState(item.date) === "Thanked" ? "✓ Thanked" : "Thank-you drafted"}
                       </button>
-                    ) : item.type === "gift" && donor.active ? (
+                    ) : item.type === "gift" && donor.active && canSend ? (
                       <button
                         type="button"
                         onClick={() => thank(item.id)}
