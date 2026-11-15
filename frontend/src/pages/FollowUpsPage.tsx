@@ -233,7 +233,7 @@ export default function FollowUpsPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Section
               title="Drafts to review"
-              hint="Written by the system. Open the donor to review, send it yourself, then mark it sent."
+              hint="Written by the system. Review it, send it yourself, then mark it sent."
               empty="No drafts waiting."
             >
               {queue.drafts_to_review.map((d) => (
@@ -251,6 +251,12 @@ export default function FollowUpsPage() {
                       {donorLink(d.donor_id, d.donor_name)}
                     </p>
                   </div>
+                  <Link
+                    to={`/${role}/outreach?draft=${d.id}`}
+                    className="shrink-0 border border-[#183E32] px-3 py-1.5 text-xs font-semibold text-[#183E32] hover:bg-[#EDF0E8]"
+                  >
+                    Review
+                  </Link>
                 </li>
               ))}
             </Section>
