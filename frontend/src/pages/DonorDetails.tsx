@@ -11,10 +11,12 @@ import {
   Mail,
   MessageSquare,
   Phone,
+  Sparkles,
 } from "lucide-react";
 
 import {
   ApiError,
+  draftAIUpdate,
   draftQuarterlyUpdate,
   draftThankYou,
   formatDate,
@@ -243,18 +245,27 @@ export default function DonorDetails() {
     }
   }
 
-  // Quarterly update for just this donor, pre-filled from the template.
-  const [draftingQuarterly, setDraftingQuarterly] = useState(false);
+  // Updates for just this donor: the quarterly template, or an AI draft written
+  // from their gift history. Both open in Outreach for review before sending.
+  const [drafting, setDrafting] = useState<"quarterly" | "ai" | null>(null);
   const [quarterlyError, setQuarterlyError] = useState("");
-  async function draftQuarterly(donorId: number) {
-    setDraftingQuarterly(true);
+  async function draftUpdate(donorId: number, kind: "quarterly" | "ai") {
+    setDrafting(kind);
     setQuarterlyError("");
     try {
-      const draft = await draftQuarterlyUpdate(donorId);
-      navigate(`/${role}/outreach?draft=${draft.id}`);
+      if (kind === "ai") {
+        const draft = await draftAIUpdate(donorId);
+        if (draft.ai_fallback) {
+          window.alert("AI drafting isn't available right now, so the quarterly template was used instead.");
+        }
+        navigate(`/${role}/outreach?draft=${draft.id}`);
+      } else {
+        const draft = await draftQuarterlyUpdate(donorId);
+        navigate(`/${role}/outreach?draft=${draft.id}`);
+      }
     } catch (err) {
       setQuarterlyError((err as Error).message);
-      setDraftingQuarterly(false);
+      setDrafting(null);
     }
   }
 
@@ -361,15 +372,26 @@ export default function DonorDetails() {
         {(contactButtons.length > 0 || donor.active) && (
           <div className="flex flex-wrap gap-2">
             {donor.active && (donor.email || donor.phone) && (
-              <button
-                type="button"
-                onClick={() => draftQuarterly(donor.id)}
-                disabled={draftingQuarterly}
-                className="inline-flex cursor-pointer items-center gap-2 border border-[#183E32] bg-[#183E32] px-4 py-2 text-sm text-[#F5F0E6] transition-colors hover:bg-[#254C3E] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
-              >
-                <FileText size={16} aria-hidden="true" />
-                {draftingQuarterly ? "Drafting…" : "Draft quarterly update"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => draftUpdate(donor.id, "ai")}
+                  disabled={drafting !== null}
+                  className="inline-flex cursor-pointer items-center gap-2 border border-[#183E32] bg-[#183E32] px-4 py-2 text-sm text-[#F5F0E6] transition-colors hover:bg-[#254C3E] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
+                >
+                  <Sparkles size={16} aria-hidden="true" />
+                  {drafting === "ai" ? "Writing…" : "Draft update with AI"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => draftUpdate(donor.id, "quarterly")}
+                  disabled={drafting !== null}
+                  className="inline-flex cursor-pointer items-center gap-2 border border-[#183E32] px-4 py-2 text-sm text-[#183E32] transition-colors hover:bg-[#183E32] hover:text-[#F5F0E6] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#183E32]"
+                >
+                  <FileText size={16} aria-hidden="true" />
+                  {drafting === "quarterly" ? "Drafting…" : "Draft quarterly update"}
+                </button>
+              </>
             )}
             {quarterlyError && (
               <p role="alert" className="w-full text-sm text-[#9A3B2E]">{quarterlyError}</p>

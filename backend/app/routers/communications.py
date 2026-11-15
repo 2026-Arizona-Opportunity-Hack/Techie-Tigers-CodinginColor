@@ -7,6 +7,7 @@ from ..auth import CurrentUser, get_current_user, require_roles
 from ..common import user_names, donor_display_name, get_donor_or_404
 from ..db import service_client
 from ..templates import thank_you, contact_links, quarterly_update
+from ..ai import AIUnavailable, draft_update
 
 
 router = APIRouter(prefix="/communications", tags=["communications"])
@@ -132,6 +133,58 @@ def draft_quarterly(body: QuarterlyIn, user: CurrentUser = Depends(get_current_u
         }).execute().data[0]
     except APIError as e:
         raise HTTPException(400, e.message)
+
+
+class AIUpdateIn(BaseModel):
+    donor_id: int
+
+
+@router.post("/ai-update", status_code=201)
+def draft_ai_update(body: AIUpdateIn, user: CurrentUser = Depends(get_current_user)):
+    """P1: an AI-written update from this donor's gift history and the outcomes of
+    the programs they funded. Saved as a draft (ai_generated = true); a person
+    reviews, edits and sends it. If AI is off or fails, the quarterly template is
+    used instead and `ai_fallback` says why."""
+    d = get_donor_or_404(user.db, body.donor_id,
+                         "id, first_name, organization_name, email, phone, active")
+    if not d["active"]:
+        raise HTTPException(400, "This donor is inactive")
+    channel = "email" if d["email"] else "text" if d["phone"] else None
+    if not channel:
+        raise HTTPException(400, "This donor has no email or phone on file")
+
+    gifts = (user.db.table("gifts").select("amount, gift_date, programs(name)")
+             .eq("donor_id", d["id"]).order("gift_date", desc=True).execute().data)
+    all_outcomes = (user.db.table("outcomes").select("year, description, programs(name)")
+                    .order("year", desc=True).limit(40).execute().data)
+    # Outcomes of the programs this donor funded first, then the latest year's.
+    funded = {(g.get("programs") or {}).get("name") for g in gifts} - {None}
+    latest = all_outcomes[0]["year"] if all_outcomes else None
+    outcomes = ([o for o in all_outcomes if (o.get("programs") or {}).get("name") in funded]
+                + [o for o in all_outcomes if o["year"] == latest
+                   and (o.get("programs") or {}).get("name") not in funded])[:8]
+
+    fallback = None
+    try:
+        subject, text = draft_update(d, gifts, outcomes, channel)
+        ai = True
+    except AIUnavailable as e:
+        fallback, ai = str(e), False
+        jan1 = date(date.today().year, 1, 1).isoformat()
+        subject, text = quarterly_update(
+            d, outcomes,
+            sum(float(g["amount"]) for g in gifts if g["gift_date"] >= jan1),
+            any(g["gift_date"] < jan1 for g in gifts))
+
+    try:
+        draft = user.db.table("communications").insert({
+            "donor_id": d["id"], "user_id": user.id, "channel": channel,
+            "kind": "update", "subject": subject, "body": text,
+            "status": "draft", "ai_generated": ai,
+        }).execute().data[0]
+    except APIError as e:
+        raise HTTPException(400, e.message)
+    return {**draft, "ai_fallback": fallback}
 
 
 class DraftEdit(BaseModel):

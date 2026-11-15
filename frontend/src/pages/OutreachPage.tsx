@@ -471,6 +471,11 @@ export default function OutreachPage() {
                   <span className="mr-2 inline-block border border-[#C8D2C7] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#183E32]">
                     {selected.kind.replace(/_/g, "-")}
                   </span>
+                  {selected.ai_generated && (
+                    <span className="mr-2 inline-block border border-[#B98A2E] bg-[#FBF1DC] px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-[#7A5A12]">
+                      AI draft
+                    </span>
+                  )}
                   To{" "}
                   <Link
                     to={`/${role}/donors/${selected.donor_id}`}

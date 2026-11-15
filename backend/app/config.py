@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     supabase_service_role_key: str
     # Comma-separated list of origins allowed to call the API (the React app).
     frontend_origins: str = "http://localhost:5173"
+    # OpenAI-compatible endpoint for AI-drafted donor updates (the OHack gateway).
+    # Leave the key unset to turn AI drafting off; updates fall back to templates.
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-oss-120b"
 
     @property
     def cors_origins(self) -> list[str]:

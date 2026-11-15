@@ -337,6 +337,15 @@ export const draftQuarterlyUpdate = (donorId: number) =>
     body: JSON.stringify({ donor_id: donorId }),
   });
 
+// AI-written update from this donor's gift history and program outcomes. Saved
+// as a draft for review. ai_fallback is set when AI was unavailable and the
+// quarterly template was used instead.
+export const draftAIUpdate = (donorId: number) =>
+  apiFetch<{ id: number; ai_generated: boolean; ai_fallback: string | null }>(
+    "/communications/ai-update",
+    { method: "POST", body: JSON.stringify({ donor_id: donorId }) }
+  );
+
 // Admin only: draft a quarterly update for every active donor nobody has
 // contacted in 90 days. Safe to run twice; donors with a pending one are skipped.
 export const draftQuarterlyUpdates = () =>
