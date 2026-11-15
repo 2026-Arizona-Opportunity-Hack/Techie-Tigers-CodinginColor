@@ -18,6 +18,7 @@ from typing import Annotated
 import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
+from .. import ratelimit
 from ..auth import CurrentUser, require_role
 from ..db import service_client
 from ..importers.dedupe import Existing, Plan, build_plan
@@ -203,6 +204,9 @@ async def import_file(
     user: Annotated[CurrentUser, Depends(require_role("admin"))],
     dry_run: Annotated[bool, Query(description="Preview only; nothing is saved")] = False,
 ):
+    # Parsing + fuzzy dedupe is the heaviest work on the server. 10/min leaves
+    # room for a dry-run preview followed by the real import of several files.
+    ratelimit.check(user.id, "import", limit=10, per_seconds=60)
     data = await file.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise HTTPException(413, "File is larger than 5 MB.")
