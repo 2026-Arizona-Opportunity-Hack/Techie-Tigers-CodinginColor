@@ -18,6 +18,7 @@ import FollowUpsPage from "./pages/FollowUpsPage";
 import ImportsPage from "./pages/ImportsPage";
 import RetentionPage from "./pages/RetentionPage";
 import OverviewPage from "./pages/OverviewPage";
+import DuplicatesPage from "./pages/DuplicatesPage";
 import BoardMembersPage from "./pages/BoardMembersPage";
 import BoardMemberPage from "./pages/BoardMemberPage";
 
@@ -81,6 +82,12 @@ export default function App() {
           <Route
             path="retention"
             element={<RetentionPage />}
+          />
+
+          {/* Duplicate review (CEO) */}
+          <Route
+            path="duplicates"
+            element={<DuplicatesPage />}
           />
 
           {/* Overview (every role) */}
